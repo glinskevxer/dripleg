@@ -2,6 +2,13 @@
 
 from __future__ import annotations
 
+from dripleg.units.flow import (
+    HOURS_PER_YEAR,
+    Mass,
+    MassFlow,
+    MassFlowUnit,
+    MassUnit,
+)
 from dripleg.units.pressure import (
     ATMOSPHERE_PSIA,
     Pressure,
@@ -17,6 +24,11 @@ from dripleg.units.temperature import (
 __all__ = [
     "ABSOLUTE_ZERO_F",
     "ATMOSPHERE_PSIA",
+    "HOURS_PER_YEAR",
+    "Mass",
+    "MassFlow",
+    "MassFlowUnit",
+    "MassUnit",
     "Pressure",
     "PressureUnit",
     "Temperature",
