@@ -2,6 +2,12 @@
 
 from __future__ import annotations
 
+from dripleg.units.energy import (
+    Energy,
+    EnergyRate,
+    EnergyUnit,
+    SpecificEnthalpy,
+)
 from dripleg.units.flow import (
     HOURS_PER_YEAR,
     Mass,
@@ -25,12 +31,16 @@ __all__ = [
     "ABSOLUTE_ZERO_F",
     "ATMOSPHERE_PSIA",
     "HOURS_PER_YEAR",
+    "Energy",
+    "EnergyRate",
+    "EnergyUnit",
     "Mass",
     "MassFlow",
     "MassFlowUnit",
     "MassUnit",
     "Pressure",
     "PressureUnit",
+    "SpecificEnthalpy",
     "Temperature",
     "TemperatureDelta",
     "TemperatureUnit",
