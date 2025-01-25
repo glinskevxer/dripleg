@@ -1,0 +1,3 @@
+# Normalise line endings, so a checkout on another machine does not rewrite
+# every file the first time somebody saves one.
+* text=auto eol=lf
