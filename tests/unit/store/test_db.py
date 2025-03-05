@@ -153,3 +153,57 @@ def test_a_corrupt_book_fails_its_check(tmp_path: Path) -> None:
     with pytest.raises(ConflictError, match="integrity check"):
         db.integrity_check()
     db.close()
+
+
+def test_a_script_splits_into_statements() -> None:
+    from dripleg.store.db import split_statements
+
+    parts = list(
+        split_statements(
+            """
+            CREATE TABLE a (id INTEGER PRIMARY KEY);
+            CREATE TABLE b (id INTEGER PRIMARY KEY);
+            """
+        )
+    )
+    assert len(parts) == 2
+    assert parts[0].startswith("CREATE TABLE a")
+
+
+def test_splitting_keeps_a_trigger_body_in_one_piece() -> None:
+    from dripleg.store.db import split_statements
+
+    parts = list(
+        split_statements(
+            """
+            CREATE TABLE a (id INTEGER PRIMARY KEY, n INTEGER);
+            CREATE TRIGGER bump AFTER INSERT ON a
+            BEGIN
+                UPDATE a SET n = n + 1 WHERE id = NEW.id;
+            END;
+            """
+        )
+    )
+    assert len(parts) == 2
+    assert "END" in parts[1]
+
+
+def test_an_unfinished_statement_is_refused() -> None:
+    from dripleg.store.db import split_statements
+
+    with pytest.raises(DriplegError, match="unfinished statement"):
+        list(split_statements("CREATE TABLE a (id INTEGER"))
+
+
+def test_a_batch_runs_inside_an_open_transaction(book: Database) -> None:
+    def half_a_schema() -> None:
+        with book.transaction():
+            book.execute_batch(
+                "CREATE TABLE x (id INTEGER PRIMARY KEY);CREATE TABLE y (id INTEGER PRIMARY KEY);"
+            )
+            raise RuntimeError("changed my mind")
+
+    with pytest.raises(RuntimeError, match="changed my mind"):
+        half_a_schema()
+    assert not book.has_table("x")
+    assert not book.has_table("y")

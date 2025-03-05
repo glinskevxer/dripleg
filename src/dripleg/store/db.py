@@ -20,7 +20,7 @@ from typing import Any
 
 from dripleg.errors import ConflictError, DriplegError
 
-__all__ = ["Database", "open_book"]
+__all__ = ["Database", "open_book", "split_statements"]
 
 IN_MEMORY = ":memory:"
 
@@ -107,7 +107,24 @@ class Database:
         cursor.close()
 
     def execute_script(self, sql: str) -> None:
+        """Run a whole script. Commits first, so never inside a transaction."""
+
         self._connection.executescript(sql)
+
+    def execute_batch(self, sql: str) -> int:
+        """Run several statements one at a time, inside whatever is open.
+
+        `executescript` issues a COMMIT before it starts, which quietly ends
+        any transaction the caller had open and leaves the rest of that unit of
+        work outside it. A migration has to land together with its ledger row,
+        so it comes through here instead: split on complete statements and
+        execute them separately.
+        """
+
+        statements = list(split_statements(sql))
+        for statement in statements:
+            self._connection.execute(statement)
+        return len(statements)
 
     @contextmanager
     def transaction(self) -> Iterator[Database]:
@@ -172,6 +189,31 @@ class Database:
 
     def __repr__(self) -> str:
         return f"Database({self.path!r})"
+
+
+def split_statements(sql: str) -> Iterator[str]:
+    """Cut a script into statements, using sqlite's own idea of complete.
+
+    Splitting on semicolons is wrong the moment a trigger body turns up, and
+    `sqlite3.complete_statement` is the same parser the shell uses to decide
+    whether to keep prompting.
+    """
+
+    pending: list[str] = []
+    for character in sql:
+        pending.append(character)
+        if character != ";":
+            continue
+        buffer = "".join(pending)
+        if not sqlite3.complete_statement(buffer):
+            continue
+        statement = buffer.strip()
+        if statement and statement != ";":
+            yield statement
+        pending.clear()
+    leftover = "".join(pending).strip()
+    if leftover:
+        raise DriplegError(f"the script ends in an unfinished statement: {leftover[:60]!r}")
 
 
 def open_book(path: str | Path = IN_MEMORY) -> Database:
