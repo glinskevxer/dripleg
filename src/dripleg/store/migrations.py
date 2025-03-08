@@ -88,7 +88,85 @@ MIGRATION_001 = Migration(
     """,
 )
 
-MIGRATIONS: tuple[Migration, ...] = (MIGRATION_001,)
+MIGRATION_002 = Migration(
+    2,
+    "trap models profiles and stations",
+    """
+    CREATE TABLE trap_model (
+        manufacturer            TEXT NOT NULL,
+        code                    TEXT NOT NULL,
+        principle               TEXT NOT NULL,
+        orifice_diameter_in     REAL NOT NULL,
+        max_operating_psia      REAL NOT NULL,
+        max_back_pressure_pct   REAL NOT NULL,
+        connection_size_in      REAL NOT NULL,
+        connection_type         TEXT NOT NULL,
+        list_price_cents        INTEGER NOT NULL,
+        discontinued            INTEGER NOT NULL DEFAULT 0,
+        replaced_by             TEXT,
+        PRIMARY KEY (manufacturer, code),
+        CHECK (orifice_diameter_in > 0),
+        CHECK (max_back_pressure_pct > 0 AND max_back_pressure_pct <= 100),
+        CHECK (list_price_cents >= 0),
+        CHECK (discontinued IN (0, 1)),
+        CHECK (replaced_by IS NULL OR discontinued = 1),
+        CHECK (replaced_by IS NULL OR replaced_by <> code)
+    );
+
+    CREATE TABLE operating_profile (
+        site_code       TEXT NOT NULL REFERENCES site(code) ON DELETE CASCADE,
+        code            TEXT NOT NULL,
+        name            TEXT NOT NULL,
+        pattern         TEXT NOT NULL,
+        load_factor     REAL NOT NULL DEFAULT 1.0,
+        campaign_months TEXT NOT NULL DEFAULT '',
+        PRIMARY KEY (site_code, code),
+        CHECK (load_factor > 0 AND load_factor <= 1),
+        CHECK ((pattern = 'campaign') = (campaign_months <> ''))
+    );
+
+    CREATE TABLE trap_station (
+        site_code               TEXT NOT NULL,
+        tag                     TEXT NOT NULL,
+        area_code               TEXT NOT NULL,
+        system_code             TEXT NOT NULL,
+        sequence                INTEGER NOT NULL,
+        model_manufacturer      TEXT NOT NULL,
+        model_code              TEXT NOT NULL,
+        service                 TEXT NOT NULL,
+        accessibility           TEXT NOT NULL,
+        criticality             TEXT NOT NULL,
+        profile_code            TEXT NOT NULL,
+        installed_on            TEXT NOT NULL,
+        removed_on              TEXT,
+        destination             TEXT,
+        strainer_fitted         INTEGER NOT NULL DEFAULT 1,
+        isolation_valves        INTEGER NOT NULL DEFAULT 2,
+        test_valve_fitted       INTEGER NOT NULL DEFAULT 0,
+        insulated               INTEGER NOT NULL DEFAULT 1,
+        interval_months_override INTEGER,
+        note                    TEXT NOT NULL DEFAULT '',
+        PRIMARY KEY (site_code, tag),
+        FOREIGN KEY (site_code, area_code, system_code)
+            REFERENCES header(site_code, area_code, system_code) ON DELETE CASCADE,
+        FOREIGN KEY (model_manufacturer, model_code)
+            REFERENCES trap_model(manufacturer, code),
+        FOREIGN KEY (site_code, profile_code)
+            REFERENCES operating_profile(site_code, code),
+        CHECK (sequence >= 1),
+        CHECK (isolation_valves BETWEEN 0 AND 2),
+        CHECK (removed_on IS NULL OR removed_on >= installed_on),
+        CHECK (interval_months_override IS NULL
+               OR interval_months_override BETWEEN 1 AND 60)
+    );
+
+    CREATE INDEX station_by_header ON trap_station (site_code, area_code, system_code);
+    CREATE INDEX station_by_service ON trap_station (site_code, service);
+    CREATE INDEX station_by_model ON trap_station (model_manufacturer, model_code);
+    """,
+)
+
+MIGRATIONS: tuple[Migration, ...] = (MIGRATION_001, MIGRATION_002)
 
 
 def schema_version(book: Database) -> int:
