@@ -13,21 +13,15 @@ from __future__ import annotations
 
 import sqlite3
 
-from dripleg.errors import NotFoundError, ValidationError
+from dripleg.errors import NotFoundError
 from dripleg.model.header import DischargeDestination, SteamHeader
 from dripleg.model.plant import Area, Site
 from dripleg.model.tags import AreaCode, SiteCode, SystemCode
+from dripleg.store.codes import enum_from_value
 from dripleg.store.db import Database
 from dripleg.units.pressure import Pressure
 
 __all__ = ["PlantRepository"]
-
-
-def _destination(text: str) -> DischargeDestination:
-    for member in DischargeDestination:
-        if member.value == text:
-            return member
-    raise ValidationError(f"{text!r} is not a discharge destination", field="destination")
 
 
 class PlantRepository:
@@ -215,5 +209,7 @@ class PlantRepository:
             operating_pressure=Pressure.from_psia(float(row["operating_psia"])),
             design_pressure=Pressure.from_psia(float(row["design_psia"])),
             discharge_pressure=Pressure.from_psia(float(row["discharge_psia"])),
-            destination=_destination(str(row["destination"])),
+            destination=enum_from_value(
+                DischargeDestination, str(row["destination"]), field="destination"
+            ),
         )
