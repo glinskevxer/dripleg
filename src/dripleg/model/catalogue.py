@@ -9,6 +9,10 @@ something the storeroom stocks.
 The two limits that matter are the maximum operating pressure, which is a
 safety and a warranty question, and the maximum back pressure, which is a
 performance one and is quoted as a percentage of inlet pressure.
+
+Manufacturer and code are both held upper case, the way a parts list prints
+them. That is not a cosmetic choice: the catalogue is keyed on the pair, and a
+book that has taken `Halden` once and `HALDEN` once has two of everything.
 """
 
 from __future__ import annotations
@@ -63,7 +67,7 @@ class TrapModel:
     replaced_by: str | None = None
 
     def __post_init__(self) -> None:
-        maker = " ".join(self.manufacturer.split())
+        maker = " ".join(self.manufacturer.split()).upper()
         if not maker:
             raise ValidationError("a model needs a manufacturer", field="manufacturer")
         object.__setattr__(self, "manufacturer", maker)
@@ -100,7 +104,7 @@ class TrapModel:
 
     @property
     def key(self) -> tuple[str, str]:
-        return (self.manufacturer.upper(), self.code)
+        return (self.manufacturer, self.code)
 
     @property
     def orifice_area_sq_in(self) -> float:

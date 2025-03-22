@@ -41,7 +41,7 @@ class CatalogueRepository:
                 "discontinued = excluded.discontinued, "
                 "replaced_by = excluded.replaced_by",
                 (
-                    model.manufacturer.upper(),
+                    model.manufacturer,
                     model.code,
                     model.principle.value,
                     model.orifice_diameter_in,

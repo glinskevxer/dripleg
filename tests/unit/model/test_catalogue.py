@@ -48,7 +48,7 @@ def header(operating: float = 125.0, discharge: float = 15.0) -> SteamHeader:
 def test_a_model_normalises_its_code_and_maker() -> None:
     entry = model(code=" td52 ", manufacturer="  Halden   Valve ")
     assert entry.code == "TD52"
-    assert entry.manufacturer == "Halden Valve"
+    assert entry.manufacturer == "HALDEN VALVE"
     assert entry.key == ("HALDEN VALVE", "TD52")
 
 
@@ -204,4 +204,4 @@ def test_iterating_the_catalogue_is_sorted() -> None:
 
 
 def test_printing_a_model() -> None:
-    assert str(model()) == "Halden TD52 (0.093 in)"
+    assert str(model()) == "HALDEN TD52 (0.093 in)"
