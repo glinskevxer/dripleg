@@ -166,7 +166,78 @@ MIGRATION_002 = Migration(
     """,
 )
 
-MIGRATIONS: tuple[Migration, ...] = (MIGRATION_001, MIGRATION_002)
+MIGRATION_003 = Migration(
+    3,
+    "surveys routes and observations",
+    """
+    CREATE TABLE survey (
+        site_code   TEXT NOT NULL REFERENCES site(code) ON DELETE CASCADE,
+        reference   TEXT NOT NULL,
+        name        TEXT NOT NULL,
+        contractor  TEXT NOT NULL,
+        started_on  TEXT NOT NULL,
+        finished_on TEXT,
+        PRIMARY KEY (site_code, reference),
+        CHECK (finished_on IS NULL OR finished_on >= started_on)
+    );
+
+    CREATE TABLE route (
+        site_code        TEXT NOT NULL REFERENCES site(code) ON DELETE CASCADE,
+        code             TEXT NOT NULL,
+        name             TEXT NOT NULL,
+        minutes_per_stop REAL NOT NULL DEFAULT 6.0,
+        walk_minutes     REAL NOT NULL DEFAULT 30.0,
+        PRIMARY KEY (site_code, code),
+        CHECK (minutes_per_stop > 0),
+        CHECK (walk_minutes >= 0)
+    );
+
+    CREATE TABLE route_stop (
+        site_code  TEXT NOT NULL,
+        route_code TEXT NOT NULL,
+        position   INTEGER NOT NULL,
+        tag        TEXT NOT NULL,
+        PRIMARY KEY (site_code, route_code, position),
+        UNIQUE (site_code, route_code, tag),
+        FOREIGN KEY (site_code, route_code) REFERENCES route(site_code, code) ON DELETE CASCADE,
+        CHECK (position >= 0)
+    );
+
+    CREATE TABLE observation (
+        site_code           TEXT NOT NULL,
+        survey_reference    TEXT NOT NULL,
+        tag                 TEXT NOT NULL,
+        observed_on         TEXT NOT NULL,
+        technician          TEXT NOT NULL,
+        reported_condition  TEXT NOT NULL,
+        ultrasonic_db       REAL,
+        ultrasonic_seconds  REAL,
+        ultrasonic_cycles   INTEGER,
+        ultrasonic_khz      REAL,
+        upstream_f          REAL,
+        downstream_f        REAL,
+        ambient_f           REAL,
+        temperature_method  TEXT,
+        sight_glass         TEXT,
+        measured_psia       REAL,
+        note                TEXT NOT NULL DEFAULT '',
+        photo_reference     TEXT,
+        PRIMARY KEY (site_code, survey_reference, tag),
+        FOREIGN KEY (site_code, survey_reference)
+            REFERENCES survey(site_code, reference) ON DELETE CASCADE,
+        CHECK (ultrasonic_db IS NULL OR (ultrasonic_db >= 0 AND ultrasonic_db <= 120)),
+        CHECK (ultrasonic_cycles IS NULL OR ultrasonic_cycles >= 0),
+        CHECK ((ultrasonic_db IS NULL) = (ultrasonic_seconds IS NULL)),
+        CHECK ((upstream_f IS NULL) = (downstream_f IS NULL)),
+        CHECK ((upstream_f IS NULL) = (temperature_method IS NULL))
+    );
+
+    CREATE INDEX observation_by_tag ON observation (site_code, tag, observed_on);
+    CREATE INDEX observation_by_condition ON observation (site_code, reported_condition);
+    """,
+)
+
+MIGRATIONS: tuple[Migration, ...] = (MIGRATION_001, MIGRATION_002, MIGRATION_003)
 
 
 def schema_version(book: Database) -> int:
