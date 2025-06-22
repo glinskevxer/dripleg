@@ -61,11 +61,20 @@ def a_header(
     )
 
 
+def header_for(tag: TrapTag) -> SteamHeader:
+    """The header a tag implies, so a station can be built from a tag alone."""
+
+    area = Area.of("WRX1", tag.area.value, f"Area {tag.area}", "PM2")
+    return SteamHeader.of(area, tag.system.value, f"{tag.system} main", 125.0, discharge_psig=15.0)
+
+
 def a_station(**overrides: object) -> TrapInstallation:
+    tag = overrides.get("tag", TAG)
+    assert isinstance(tag, TrapTag)
     fields: dict[str, object] = {
         "site": SiteCode("WRX1"),
         "tag": TAG,
-        "header": a_header(),
+        "header": header_for(tag),
         "model": a_model(),
         "service": ServiceType.DRIP,
         "accessibility": Accessibility.GROUND_LEVEL,
@@ -113,6 +122,7 @@ __all__ = [
     "SightGlassView",
     "a_header",
     "a_model",
+    "header_for",
     "a_reading",
     "a_station",
     "pipe",
