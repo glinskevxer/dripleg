@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime as dt
+from collections.abc import Iterator
 
 import pytest
 
@@ -39,7 +40,7 @@ PROFILE = OperatingProfile.continuous()
 
 
 @pytest.fixture
-def repo() -> StationRepository:
+def repo() -> Iterator[StationRepository]:
     book = Database()
     migrate(book)
     plant = PlantRepository(book)
@@ -48,7 +49,8 @@ def repo() -> StationRepository:
     plant.save_header(HEADER)
     CatalogueRepository(book).save(MODEL)
     ProfileRepository(book).save("WRX1", PROFILE)
-    return StationRepository(book)
+    yield StationRepository(book)
+    book.close()
 
 
 def a_station(tag: str = "B12-MP-0043", **overrides: object) -> TrapInstallation:

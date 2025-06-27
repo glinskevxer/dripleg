@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sqlite3
+from collections.abc import Iterator
 
 import pytest
 
@@ -9,7 +10,7 @@ from dripleg.store.migrations import migrate
 
 
 @pytest.fixture
-def book() -> Database:
+def book() -> Iterator[Database]:
     db = Database()
     migrate(db)
     db.execute(
@@ -35,7 +36,8 @@ def book() -> Database:
         "list_price_cents) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
         ("HALDEN", "TD52", "thermodynamic_disc", 0.093, 614.7, 80.0, 0.5, "screwed", 18400),
     )
-    return db
+    yield db
+    db.close()
 
 
 def station(book: Database, **overrides: object) -> int:

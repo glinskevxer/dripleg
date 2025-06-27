@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime as dt
+from collections.abc import Iterator
 
 import pytest
 
@@ -28,11 +29,12 @@ START = dt.date(2025, 4, 7)
 
 
 @pytest.fixture
-def book() -> Database:
+def book() -> Iterator[Database]:
     db = Database()
     migrate(db)
     PlantRepository(db).save_site(Site.of("WRX1", "Wrexham paper mill", "Bryn"))
-    return db
+    yield db
+    db.close()
 
 
 def a_survey() -> Survey:

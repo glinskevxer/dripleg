@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Iterator
+
 import pytest
 
 from dripleg.errors import NotFoundError, ValidationError
@@ -15,14 +17,15 @@ from dripleg.units.pressure import Pressure
 
 
 @pytest.fixture
-def book() -> Database:
+def book() -> Iterator[Database]:
     db = Database()
     migrate(db)
     db.execute(
         "INSERT INTO site (code, name, operator, fuel_price_basis) VALUES (?, ?, ?, ?)",
         ("WRX1", "Mill", "Bryn", "gas"),
     )
-    return db
+    yield db
+    db.close()
 
 
 def a_model(code: str = "TD52", **overrides: object) -> TrapModel:

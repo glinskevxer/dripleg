@@ -11,7 +11,7 @@ from dripleg.model.tags import TrapTag
 from dripleg.survey.condition import TrapCondition
 from dripleg.survey.observation import Observation
 from dripleg.survey.survey import Survey
-from tests.unit.diagnosis.conftest import DAY, a_station, pipe, probe
+from tests.support.build import DAY, a_station, pipe, probe
 
 
 def station(tag: str, **overrides: object):  # type: ignore[no-untyped-def]

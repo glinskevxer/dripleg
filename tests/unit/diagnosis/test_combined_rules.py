@@ -16,7 +16,7 @@ from dripleg.diagnosis.context import DiagnosisContext
 from dripleg.diagnosis.rules import RuleSet
 from dripleg.survey.condition import TrapCondition
 from dripleg.survey.readings import SightGlassView
-from tests.unit.diagnosis.conftest import a_reading, a_station, pipe, probe
+from tests.support.build import a_reading, a_station, pipe, probe
 
 
 def glass(view: SightGlassView) -> DiagnosisContext:

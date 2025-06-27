@@ -8,7 +8,7 @@ from dripleg.loss.napier import SHARP_ORIFICE_CD, WORN_SEAT_CD
 from dripleg.model.operating import OperatingProfile, ServicePattern
 from dripleg.survey.condition import TrapCondition
 from dripleg.units.pressure import Pressure
-from tests.unit.diagnosis.conftest import a_header, a_model, a_station
+from tests.support.build import a_header, a_model, a_station
 
 
 def test_a_healthy_trap_loses_nothing_but_still_gets_a_row() -> None:

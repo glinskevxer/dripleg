@@ -1,4 +1,10 @@
-"""Building a trap and a reading for the diagnosis tests without ceremony."""
+"""Building a trap, a header and a reading without four screens of ceremony.
+
+This started as a conftest under the diagnosis tests and moved here the first
+time the loss tests wanted the same station. Shared builders in a conftest are
+invisible to anything outside that directory, and the copy that gets made
+instead drifts from the original inside a week.
+"""
 
 from __future__ import annotations
 

@@ -16,7 +16,7 @@ from dripleg.survey.condition import TrapCondition
 from dripleg.survey.observation import Observation
 from dripleg.survey.survey import Survey
 from dripleg.units.money import Money
-from tests.unit.diagnosis.conftest import DAY, a_station, pipe, probe
+from tests.support.build import DAY, a_station, pipe, probe
 
 BLOWING = {"ultrasonic": probe(70.0, 0), "temperature": pipe(345.0, 258.0)}
 HEALTHY = {"ultrasonic": probe(32.0, 2), "temperature": pipe(350.0, 200.0)}

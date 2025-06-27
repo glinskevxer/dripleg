@@ -11,7 +11,7 @@ from dripleg.loss.estimate import estimate_steam_loss
 from dripleg.model.header import DischargeDestination
 from dripleg.survey.condition import TrapCondition
 from dripleg.units.money import Money, Price
-from tests.unit.diagnosis.conftest import a_header, a_station
+from tests.support.build import a_header, a_station
 
 
 def cost_of(condition: TrapCondition = TrapCondition.BLOWING_THROUGH, **kwargs: object) -> LossCost:

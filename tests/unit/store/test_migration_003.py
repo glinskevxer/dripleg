@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sqlite3
+from collections.abc import Iterator
 
 import pytest
 
@@ -9,7 +10,7 @@ from dripleg.store.migrations import migrate
 
 
 @pytest.fixture
-def book() -> Database:
+def book() -> Iterator[Database]:
     db = Database()
     migrate(db)
     db.execute(
@@ -21,7 +22,8 @@ def book() -> Database:
         "VALUES (?, ?, ?, ?, ?)",
         ("WRX1", "S2025-1", "Spring", "Vane Energy", "2025-04-07"),
     )
-    return db
+    yield db
+    db.close()
 
 
 def observation(book: Database, **overrides: object) -> None:

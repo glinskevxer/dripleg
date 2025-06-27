@@ -16,7 +16,7 @@ from dripleg.diagnosis.rules import RuleSet
 from dripleg.model.header import DischargeDestination
 from dripleg.model.principles import OperatingPrinciple
 from dripleg.survey.condition import TrapCondition
-from tests.unit.diagnosis.conftest import a_header, a_model, a_reading, a_station, pipe
+from tests.support.build import a_header, a_model, a_reading, a_station, pipe
 
 
 def context(

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Iterator
+
 import pytest
 
 from dripleg.errors import NotFoundError, ValidationError
@@ -11,10 +13,11 @@ from dripleg.store.plant_repo import PlantRepository
 
 
 @pytest.fixture
-def repo() -> PlantRepository:
+def repo() -> Iterator[PlantRepository]:
     book = Database()
     migrate(book)
-    return PlantRepository(book)
+    yield PlantRepository(book)
+    book.close()
 
 
 def a_site() -> Site:

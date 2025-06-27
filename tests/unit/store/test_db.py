@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sqlite3
+from collections.abc import Iterator
 from pathlib import Path
 
 import pytest
@@ -10,7 +11,7 @@ from dripleg.store.db import Database, open_book
 
 
 @pytest.fixture
-def book() -> Database:
+def book() -> Iterator[Database]:
     db = Database()
     db.execute_script(
         """
@@ -22,7 +23,8 @@ def book() -> Database:
         );
         """
     )
-    return db
+    yield db
+    db.close()
 
 
 def test_a_fresh_book_has_foreign_keys_on(book: Database) -> None:

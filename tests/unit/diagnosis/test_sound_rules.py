@@ -17,7 +17,7 @@ from dripleg.diagnosis.sound_rules import (
 from dripleg.model.header import PressureClass
 from dripleg.model.principles import OperatingPrinciple
 from dripleg.survey.condition import TrapCondition
-from tests.unit.diagnosis.conftest import a_header, a_model, a_reading, a_station, probe
+from tests.support.build import a_header, a_model, a_reading, a_station, probe
 
 
 def context(

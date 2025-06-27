@@ -9,7 +9,7 @@ from dripleg.errors import ValidationError
 from dripleg.model.principles import OperatingPrinciple
 from dripleg.model.tags import TrapTag
 from dripleg.units.pressure import Pressure
-from tests.unit.diagnosis.conftest import a_header, a_model, a_reading, a_station, pipe, probe
+from tests.support.build import a_header, a_model, a_reading, a_station, pipe, probe
 
 
 def test_the_context_checks_the_reading_belongs_to_the_station() -> None:

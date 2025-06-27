@@ -10,7 +10,7 @@ from dripleg.loss.energy import EnergyModel
 from dripleg.loss.estimate import estimate_steam_loss
 from dripleg.survey.condition import TrapCondition
 from dripleg.units.energy import Energy
-from tests.unit.diagnosis.conftest import a_station
+from tests.support.build import a_station
 
 
 def heat_loss(condition: TrapCondition = TrapCondition.BLOWING_THROUGH):  # type: ignore[no-untyped-def]

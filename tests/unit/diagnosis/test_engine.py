@@ -8,7 +8,7 @@ from dripleg.model.principles import OperatingPrinciple
 from dripleg.survey.condition import TrapCondition
 from dripleg.survey.readings import SightGlassView
 from dripleg.units.pressure import Pressure
-from tests.unit.diagnosis.conftest import a_model, a_reading, a_station, pipe, probe
+from tests.support.build import a_model, a_reading, a_station, pipe, probe
 
 
 def diagnose(

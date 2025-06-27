@@ -9,7 +9,7 @@ from dripleg.model.header import DischargeDestination
 from dripleg.model.installation import TrapInstallation
 from dripleg.survey.condition import TrapCondition
 from dripleg.units.temperature import Temperature
-from tests.unit.diagnosis.conftest import a_header, a_station
+from tests.support.build import a_header, a_station
 
 
 def a_model(**overrides: object) -> EnergyModel:

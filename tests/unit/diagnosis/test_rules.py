@@ -8,7 +8,7 @@ from dripleg.diagnosis.rules import Rule, RuleSet
 from dripleg.errors import ConflictError, NotFoundError, ValidationError
 from dripleg.survey.condition import TrapCondition
 from dripleg.survey.readings import SurveyMethod
-from tests.unit.diagnosis.conftest import a_reading, a_station, probe
+from tests.support.build import a_reading, a_station, probe
 
 
 class NeedsSound(Rule):
