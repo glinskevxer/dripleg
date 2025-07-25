@@ -237,7 +237,78 @@ MIGRATION_003 = Migration(
     """,
 )
 
-MIGRATIONS: tuple[Migration, ...] = (MIGRATION_001, MIGRATION_002, MIGRATION_003)
+MIGRATION_004 = Migration(
+    4,
+    "findings and work orders",
+    """
+    CREATE TABLE finding (
+        site_code           TEXT NOT NULL,
+        survey_reference    TEXT NOT NULL,
+        tag                 TEXT NOT NULL,
+        diagnosed           TEXT NOT NULL,
+        reported            TEXT NOT NULL,
+        confidence          REAL NOT NULL,
+        flags               TEXT NOT NULL DEFAULT '',
+        rules_fired         TEXT NOT NULL DEFAULT '',
+        pounds_per_hour     REAL NOT NULL DEFAULT 0,
+        pounds_per_year     REAL NOT NULL DEFAULT 0,
+        fuel_mmbtu_per_year REAL NOT NULL DEFAULT 0,
+        tonnes_co2e         REAL NOT NULL DEFAULT 0,
+        annual_cost_cents   INTEGER NOT NULL DEFAULT 0,
+        PRIMARY KEY (site_code, survey_reference, tag),
+        FOREIGN KEY (site_code, survey_reference, tag)
+            REFERENCES observation(site_code, survey_reference, tag) ON DELETE CASCADE,
+        CHECK (confidence >= 0 AND confidence <= 1),
+        CHECK (pounds_per_hour >= 0),
+        CHECK (pounds_per_year >= 0),
+        CHECK (annual_cost_cents >= 0)
+    );
+
+    CREATE INDEX finding_by_cost ON finding (site_code, annual_cost_cents DESC);
+    CREATE INDEX finding_by_condition ON finding (site_code, diagnosed);
+
+    CREATE TABLE work_order (
+        number                TEXT PRIMARY KEY,
+        site_code             TEXT NOT NULL REFERENCES site(code) ON DELETE CASCADE,
+        tag                   TEXT NOT NULL,
+        action                TEXT NOT NULL,
+        state                 TEXT NOT NULL,
+        raised_on             TEXT NOT NULL,
+        due_on                TEXT NOT NULL,
+        assigned_to           TEXT,
+        started_on            TEXT,
+        completed_on          TEXT,
+        verified_on           TEXT,
+        estimated_cost_cents  INTEGER NOT NULL,
+        actual_cost_cents     INTEGER,
+        CHECK (due_on >= raised_on),
+        CHECK (estimated_cost_cents >= 0),
+        CHECK (actual_cost_cents IS NULL OR actual_cost_cents >= 0),
+        CHECK (completed_on IS NULL OR completed_on >= raised_on),
+        CHECK (verified_on IS NULL OR completed_on IS NOT NULL),
+        CHECK (verified_on IS NULL OR verified_on >= completed_on),
+        CHECK (state <> 'verified' OR verified_on IS NOT NULL)
+    );
+
+    CREATE INDEX work_order_by_tag ON work_order (site_code, tag);
+    CREATE INDEX work_order_by_state ON work_order (site_code, state, due_on);
+
+    CREATE TABLE work_order_event (
+        number   TEXT NOT NULL REFERENCES work_order(number) ON DELETE CASCADE,
+        position INTEGER NOT NULL,
+        note     TEXT NOT NULL,
+        PRIMARY KEY (number, position),
+        CHECK (position >= 0)
+    );
+    """,
+)
+
+MIGRATIONS: tuple[Migration, ...] = (
+    MIGRATION_001,
+    MIGRATION_002,
+    MIGRATION_003,
+    MIGRATION_004,
+)
 
 
 def schema_version(book: Database) -> int:
