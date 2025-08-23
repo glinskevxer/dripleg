@@ -9,6 +9,7 @@ import click
 
 from dripleg import __version__
 from dripleg.cli.context import DEFAULT_BOOK, Context
+from dripleg.cli.plant import area_group, header_group, site_group
 from dripleg.errors import DriplegError
 from dripleg.store.migrations import MIGRATIONS
 
@@ -73,6 +74,11 @@ def about(context: Context) -> None:
     width = max(len(k) for k in facts)
     for key, value in facts.items():
         click.echo(f"{key.replace('_', ' '):<{width}}  {value}")
+
+
+cli.add_command(site_group)
+cli.add_command(area_group)
+cli.add_command(header_group)
 
 
 def run() -> int:
