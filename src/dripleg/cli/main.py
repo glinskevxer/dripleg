@@ -11,6 +11,7 @@ from dripleg import __version__
 from dripleg.cli.catalogue import model_group, profile_group
 from dripleg.cli.context import DEFAULT_BOOK, Context
 from dripleg.cli.plant import area_group, header_group, site_group
+from dripleg.cli.traps import trap_group
 from dripleg.errors import DriplegError
 from dripleg.store.migrations import MIGRATIONS
 
@@ -82,6 +83,7 @@ cli.add_command(area_group)
 cli.add_command(header_group)
 cli.add_command(model_group)
 cli.add_command(profile_group)
+cli.add_command(trap_group)
 
 
 def run() -> int:
