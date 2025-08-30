@@ -121,8 +121,14 @@ class Survey:
         self._observations[observation.tag] = observation
 
     def amend(self, observation: Observation) -> None:
-        """Replace a reading, which is what a return visit produces."""
+        """Replace a reading, which is what a return visit produces.
 
+        A closed survey takes no amendments either. It is a record of what was
+        found, and a correction after the fact belongs in the next survey.
+        """
+
+        if self.is_closed:
+            raise ConflictError(f"survey {self.reference} is closed")
         if observation.tag not in self._observations:
             raise ConflictError(f"{observation.tag} has not been read on this survey")
         self._observations[observation.tag] = observation

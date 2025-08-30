@@ -123,6 +123,14 @@ def test_a_return_visit_amends_the_reading() -> None:
     assert len(survey) == 1
 
 
+def test_a_closed_survey_takes_no_amendments_either() -> None:
+    survey = a_survey()
+    survey.record(reading("B12-MP-1", TrapCondition.OK))
+    survey.close(START + dt.timedelta(days=2))
+    with pytest.raises(ConflictError, match="is closed"):
+        survey.amend(reading("B12-MP-1", TrapCondition.LEAKING))
+
+
 def test_amending_something_that_was_never_read() -> None:
     with pytest.raises(ConflictError, match="has not been read"):
         a_survey().amend(reading("B12-MP-1", TrapCondition.OK))
