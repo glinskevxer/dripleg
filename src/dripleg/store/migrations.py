@@ -303,11 +303,39 @@ MIGRATION_004 = Migration(
     """,
 )
 
+MIGRATION_005 = Migration(
+    5,
+    "the boiler house numbers a site is costed on",
+    """
+    CREATE TABLE cost_basis (
+        site_code               TEXT PRIMARY KEY REFERENCES site(code) ON DELETE CASCADE,
+        fuel_per_mmbtu          TEXT NOT NULL,
+        water_per_kgal          TEXT NOT NULL,
+        effluent_per_kgal       TEXT NOT NULL,
+        chemical_per_kgal       TEXT NOT NULL,
+        labour_per_hour         TEXT NOT NULL,
+        permit_cost_cents       INTEGER NOT NULL DEFAULT 0,
+        feedwater_f             REAL NOT NULL,
+        boiler_efficiency       REAL NOT NULL,
+        condensate_returned     REAL NOT NULL,
+        receiver_vent_fraction  REAL NOT NULL,
+        fuel                    TEXT NOT NULL,
+        effective_from          TEXT NOT NULL,
+        CHECK (boiler_efficiency > 0 AND boiler_efficiency <= 1),
+        CHECK (condensate_returned >= 0 AND condensate_returned <= 1),
+        CHECK (receiver_vent_fraction >= 0 AND receiver_vent_fraction <= 1),
+        CHECK (permit_cost_cents >= 0),
+        CHECK (feedwater_f > 32)
+    );
+    """,
+)
+
 MIGRATIONS: tuple[Migration, ...] = (
     MIGRATION_001,
     MIGRATION_002,
     MIGRATION_003,
     MIGRATION_004,
+    MIGRATION_005,
 )
 
 

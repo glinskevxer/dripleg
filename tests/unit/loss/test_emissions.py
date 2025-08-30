@@ -58,6 +58,11 @@ def test_looking_a_factor_up_by_name() -> None:
     assert factor_named("FUEL-OIL-2") is FACTORS["fuel_oil_2"]
 
 
+def test_a_factor_answers_to_the_name_it_prints_under() -> None:
+    assert factor_named("number 2 fuel oil") is FACTORS["fuel_oil_2"]
+    assert factor_named("Wood Residue") is FACTORS["biomass"]
+
+
 def test_a_fuel_with_no_factor_says_what_there_is() -> None:
     with pytest.raises(ValidationError, match="expected one of: biomass"):
         factor_named("hydrogen")

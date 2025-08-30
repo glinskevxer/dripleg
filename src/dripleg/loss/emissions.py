@@ -85,16 +85,27 @@ FACTORS: dict[str, EmissionsFactor] = {
 }
 
 
+def _squashed(text: str) -> str:
+    return "".join(ch for ch in text.lower() if ch.isalnum())
+
+
 def factor_named(name: str) -> EmissionsFactor:
-    key = name.strip().lower().replace(" ", "_").replace("-", "_")
-    try:
-        return FACTORS[key]
-    except KeyError:
-        known = ", ".join(sorted(FACTORS))
-        raise ValidationError(
-            f"{name!r} is not a fuel this build has a factor for, expected one of: {known}",
-            field="fuel",
-        ) from None
+    """Look a factor up by its key or by the name it prints under.
+
+    Both, because the key is what a command line takes and the name is what a
+    stored report carries, and a round trip through the book goes out as one
+    and comes back as the other.
+    """
+
+    wanted = _squashed(name)
+    for key, factor in FACTORS.items():
+        if wanted in {_squashed(key), _squashed(factor.name)}:
+            return factor
+    known = ", ".join(sorted(FACTORS))
+    raise ValidationError(
+        f"{name!r} is not a fuel this build has a factor for, expected one of: {known}",
+        field="fuel",
+    )
 
 
 @dataclass(frozen=True)
