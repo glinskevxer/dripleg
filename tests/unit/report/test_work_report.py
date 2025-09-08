@@ -129,7 +129,7 @@ def test_the_band_counts_add_to_the_job_count() -> None:
     assert sum(report.band_counts().values()) == report.jobs
 
 
-def test_the_whole_list_pays_back(none_needed: None = None) -> None:
+def test_the_whole_list_pays_back() -> None:
     report = build_work_report("WRX1", a_list())
     payback = report.payback_years
     assert payback is not None
