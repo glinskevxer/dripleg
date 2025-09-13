@@ -129,6 +129,48 @@ class FindingRepository:
         )
         return [self._from(row) for row in rows]
 
+    def last_verdict_per_trap(
+        self, site: SiteCode | str
+    ) -> dict[TrapTag, tuple[dt.date, TrapCondition]]:
+        """The most recent verdict on every trap, keyed by tag.
+
+        Recency is the survey's start date rather than the row order, because
+        surveys get imported out of order and a book that decides what is
+        current from insertion order is a book that reschedules the wrong trap.
+        """
+
+        rows = self.book.query(
+            "SELECT f.tag, f.diagnosed, s.started_on FROM finding f JOIN survey s "
+            "ON s.site_code = f.site_code AND s.reference = f.survey_reference "
+            "WHERE f.site_code = ? ORDER BY s.started_on",
+            (_site(site).value,),
+        )
+        latest: dict[TrapTag, tuple[dt.date, TrapCondition]] = {}
+        for row in rows:
+            tag = TrapTag.parse(str(row["tag"]))
+            latest[tag] = (
+                dt.date.fromisoformat(str(row["started_on"])),
+                enum_from_value(TrapCondition, str(row["diagnosed"]), field="diagnosed"),
+            )
+        return latest
+
+    def all_verdicts_per_trap(self, site: SiteCode | str) -> dict[TrapTag, list[TrapCondition]]:
+        """Every verdict on every trap, oldest first, for the reliability cuts."""
+
+        rows = self.book.query(
+            "SELECT f.tag, f.diagnosed FROM finding f JOIN survey s "
+            "ON s.site_code = f.site_code AND s.reference = f.survey_reference "
+            "WHERE f.site_code = ? ORDER BY s.started_on",
+            (_site(site).value,),
+        )
+        history: dict[TrapTag, list[TrapCondition]] = {}
+        for row in rows:
+            tag = TrapTag.parse(str(row["tag"]))
+            history.setdefault(tag, []).append(
+                enum_from_value(TrapCondition, str(row["diagnosed"]), field="diagnosed")
+            )
+        return history
+
     def total_cost(self, site: SiteCode | str, reference: str) -> Money:
         cents = self.book.scalar(
             "SELECT COALESCE(SUM(annual_cost_cents), 0) FROM finding "
