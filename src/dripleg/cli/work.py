@@ -7,16 +7,13 @@ import datetime as dt
 import click
 
 from dripleg.cli.context import Context
-from dripleg.cli.costing import _register_for
+from dripleg.cli.loading import work_list_for
 from dripleg.cli.output import emit_facts, emit_lines, emit_rows
 from dripleg.errors import ConflictError
-from dripleg.repair.priority import Priority, WorkList, rank_jobs
-from dripleg.repair.recommend import recommend
+from dripleg.repair.priority import Priority
 from dripleg.repair.workorder import WorkOrder
 from dripleg.report.table import Column
 from dripleg.report.work_report import build_work_report
-from dripleg.store.basis_repo import BasisRepository
-from dripleg.store.catalogue_repo import CatalogueRepository
 from dripleg.store.finding_repo import WorkOrderRepository
 from dripleg.units.money import Money
 
@@ -26,15 +23,6 @@ __all__ = ["work_group"]
 @click.group("work")
 def work_group() -> None:
     """The repair list and the orders raised from it."""
-
-
-def _work_list(context: Context, reference: str) -> WorkList:
-    register = _register_for(context, reference)
-    basis = BasisRepository(context.book).get_or_default(context.site())
-    catalogue = CatalogueRepository(context.book).load_catalogue()
-    return WorkList(
-        rank_jobs([(row, recommend(row, basis.repairs, catalogue)) for row in register.rows])
-    )
 
 
 @work_group.command("list")
@@ -52,7 +40,7 @@ def work_list(context: Context, reference: str, budget: str | None, band: str | 
 
     report = build_work_report(
         context.site(),
-        _work_list(context, reference),
+        work_list_for(context, reference),
         None if budget is None else Money.parse(budget),
         None if band is None else Priority(band),
     )
@@ -70,7 +58,7 @@ def work_raise(
 ) -> None:
     """Raise a work order for every job on the list, in rank order."""
 
-    work = _work_list(context, reference)
+    work = work_list_for(context, reference)
     jobs = work.actionable
     if budget is not None:
         jobs, _ = work.within(Money.parse(budget))

@@ -7,13 +7,13 @@ import datetime as dt
 import click
 
 from dripleg.cli.context import Context
+from dripleg.cli.loading import register_for
 from dripleg.cli.output import emit_lines, emit_rows
 from dripleg.programme.reliability import build_reliability
 from dripleg.programme.schedule import build_schedule
 from dripleg.report.programme_report import build_programme_report
 from dripleg.report.table import Column
 from dripleg.store.finding_repo import FindingRepository
-from dripleg.store.station_repo import StationRepository
 
 __all__ = ["programme_group"]
 
@@ -34,7 +34,7 @@ def programme_due(context: Context, on: str | None) -> None:
     """Compliance, the overdue register and next year's workload."""
 
     day = _day(on)
-    register = StationRepository(context.book).load_register(context.site())
+    register = register_for(context)
     history = FindingRepository(context.book).last_verdict_per_trap(context.site())
     schedule = build_schedule(register, history, on=day)
     report = build_programme_report(context.site(), schedule, day)
@@ -48,7 +48,7 @@ def programme_overdue(context: Context, on: str | None) -> None:
     """Only the traps that are late."""
 
     day = _day(on)
-    register = StationRepository(context.book).load_register(context.site())
+    register = register_for(context)
     history = FindingRepository(context.book).last_verdict_per_trap(context.site())
     schedule = build_schedule(register, history, on=day)
     emit_rows(
@@ -79,7 +79,7 @@ def programme_overdue(context: Context, on: str | None) -> None:
 def programme_reliability(context: Context, by: str) -> None:
     """Failure rates cut by what was fitted and where."""
 
-    register = StationRepository(context.book).load_register(context.site())
+    register = register_for(context)
     history = FindingRepository(context.book).all_verdicts_per_trap(context.site())
     report = build_reliability(register, history)
     cuts = {
@@ -111,7 +111,7 @@ def programme_reliability(context: Context, by: str) -> None:
 def programme_repeat(context: Context, at_least: int) -> None:
     """Stations that keep failing whatever is fitted to them."""
 
-    register = StationRepository(context.book).load_register(context.site())
+    register = register_for(context)
     history = FindingRepository(context.book).all_verdicts_per_trap(context.site())
     report = build_reliability(register, history)
     wanted = set(report.stations_failing_at_least(at_least))

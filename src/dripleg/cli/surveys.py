@@ -8,14 +8,13 @@ from pathlib import Path
 import click
 
 from dripleg.cli.context import Context
+from dripleg.cli.loading import diagnosis_for, register_for
 from dripleg.cli.output import emit_facts, emit_lines, emit_rows
-from dripleg.diagnosis.batch import diagnose_survey
 from dripleg.errors import ConflictError
 from dripleg.ingest.profile import profile_named
 from dripleg.ingest.reader import read_survey_csv
 from dripleg.report.survey_report import build_survey_report
 from dripleg.report.table import Column
-from dripleg.store.station_repo import StationRepository
 from dripleg.store.survey_repo import SurveyRepository
 from dripleg.survey.survey import Survey
 
@@ -162,8 +161,7 @@ def survey_list(context: Context) -> None:
 def survey_report(context: Context, reference: str) -> None:
     """The survey report: coverage first, then what was found."""
 
-    register = StationRepository(context.book).load_register(context.site())
+    register = register_for(context)
     survey = SurveyRepository(context.book).get(context.site(), reference)
-    diagnosis = diagnose_survey(register, survey)
-    report = build_survey_report(register, survey, diagnosis)
+    report = build_survey_report(register, survey, diagnosis_for(context, reference))
     emit_lines(context, report.lines(), report.as_dict())

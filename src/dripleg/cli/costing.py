@@ -7,19 +7,16 @@ import datetime as dt
 import click
 
 from dripleg.cli.context import Context
+from dripleg.cli.loading import loss_register_for
 from dripleg.cli.output import emit_facts, emit_lines, emit_rows
-from dripleg.diagnosis.batch import diagnose_survey
 from dripleg.loss.cost import CostBasis
 from dripleg.loss.emissions import FACTORS, factor_named
 from dripleg.loss.energy import EnergyModel
-from dripleg.loss.register import LossRegister, build_loss_register
 from dripleg.repair.recommend import RepairBasis
 from dripleg.report.loss_report import build_loss_report
 from dripleg.report.table import Column
 from dripleg.store.basis_repo import BasisRepository, SiteBasis
 from dripleg.store.finding_repo import FindingRepository
-from dripleg.store.station_repo import StationRepository
-from dripleg.store.survey_repo import SurveyRepository
 from dripleg.units.money import Money, Price
 from dripleg.units.temperature import Temperature
 
@@ -98,19 +95,6 @@ def prices_show(context: Context) -> None:
     emit_facts(context, BasisRepository(context.book).get_or_default(context.site()).facts())
 
 
-def _register_for(context: Context, reference: str) -> LossRegister:
-    register = StationRepository(context.book).load_register(context.site())
-    survey = SurveyRepository(context.book).get(context.site(), reference)
-    basis = BasisRepository(context.book).get_or_default(context.site())
-    return build_loss_register(
-        register,
-        diagnose_survey(register, survey),
-        basis.energy,
-        basis.costs,
-        basis.factor,
-    )
-
-
 @click.group("loss")
 def loss_group() -> None:
     """What the failed traps are costing."""
@@ -124,7 +108,7 @@ def loss_group() -> None:
 def loss_report(context: Context, reference: str, top: int, save: bool) -> None:
     """Cost a survey and print the register."""
 
-    register = _register_for(context, reference)
+    register = loss_register_for(context, reference)
     if save:
         FindingRepository(context.book).save_register(context.site(), register)
     report = build_loss_report(register, top)
