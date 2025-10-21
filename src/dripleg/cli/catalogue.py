@@ -34,13 +34,20 @@ def model_group() -> None:
 )
 @click.option("--orifice", required=True, type=float, help="Orifice diameter in inches.")
 @click.option("--pmo", required=True, type=float, help="Maximum operating pressure, psig.")
-@click.option("--back-pressure", default=80.0, show_default=True, type=float)
+@click.option(
+    "--back-pressure",
+    default=80.0,
+    show_default=True,
+    type=float,
+    help="Highest back pressure as a percentage of inlet.",
+)
 @click.option("--size", default=0.5, show_default=True, type=float, help="Connection, inches.")
 @click.option(
     "--connection",
     type=click.Choice(sorted(ConnectionType.ALL)),
     default=ConnectionType.SCREWED,
     show_default=True,
+    help="How it joins the pipe.",
 )
 @click.option("--price", required=True, help="List price in dollars.")
 @click.option("--discontinued", is_flag=True, help="No longer bought.")
@@ -91,7 +98,12 @@ def model_add(
 
 
 @model_group.command("list")
-@click.option("--principle", default=None, type=click.Choice([p.value for p in OperatingPrinciple]))
+@click.option(
+    "--principle",
+    default=None,
+    type=click.Choice([p.value for p in OperatingPrinciple]),
+    help="Only models that work this way.",
+)
 @click.pass_obj
 def model_list(context: Context, principle: str | None) -> None:
     """Every model in the catalogue."""
@@ -143,8 +155,15 @@ def profile_group() -> None:
     type=click.Choice([p.value for p in ServicePattern]),
     default=ServicePattern.CONTINUOUS.value,
     show_default=True,
+    help="The shape of the year this leg runs.",
 )
-@click.option("--load-factor", default=1.0, show_default=True, type=float)
+@click.option(
+    "--load-factor",
+    default=1.0,
+    show_default=True,
+    type=float,
+    help="Share of the live hours it actually carries steam.",
+)
 @click.option("--months", default="", help="Campaign months, as 9,10,11.")
 @click.pass_obj
 def profile_add(

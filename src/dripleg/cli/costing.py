@@ -35,15 +35,40 @@ def prices_group() -> None:
 @click.option("--chemical", default="2.75", show_default=True, help="Dollars per 1000 gal.")
 @click.option("--labour", default="74.00", show_default=True, help="Dollars per hour.")
 @click.option("--permit", default="120.00", show_default=True, help="Dollars per permit job.")
-@click.option("--feedwater-f", default=227.0, show_default=True, type=float)
-@click.option("--efficiency", default=0.82, show_default=True, type=float)
-@click.option("--condensate-returned", default=0.75, show_default=True, type=float)
-@click.option("--vent-fraction", default=0.35, show_default=True, type=float)
+@click.option(
+    "--feedwater-f",
+    default=227.0,
+    show_default=True,
+    type=float,
+    help="Deaerator temperature the makeup arrives at.",
+)
+@click.option(
+    "--efficiency",
+    default=0.82,
+    show_default=True,
+    type=float,
+    help="Boiler efficiency, as a fraction.",
+)
+@click.option(
+    "--condensate-returned",
+    default=0.75,
+    show_default=True,
+    type=float,
+    help="Share of the condensate that comes back.",
+)
+@click.option(
+    "--vent-fraction",
+    default=0.35,
+    show_default=True,
+    type=float,
+    help="Share of live steam into the return that the receiver vents.",
+)
 @click.option(
     "--fuel-type",
     type=click.Choice(sorted(FACTORS)),
     default="natural_gas",
     show_default=True,
+    help="Which emissions factor the carbon figure uses.",
 )
 @click.option("--from", "effective_from", default=None, help="Date these took effect.")
 @click.pass_obj
@@ -116,7 +141,7 @@ def loss_report(context: Context, reference: str, top: int, save: bool) -> None:
 
 
 @loss_group.command("top")
-@click.option("--limit", default=10, show_default=True)
+@click.option("--limit", default=10, show_default=True, help="How many to name.")
 @click.pass_obj
 def loss_top(context: Context, limit: int) -> None:
     """The dearest traps across every survey saved on the book."""

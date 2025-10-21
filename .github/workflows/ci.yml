@@ -26,6 +26,7 @@ jobs:
       - run: python -m mypy
       - run: python -m dripleg.tools.check_migrations
       - run: python -m dripleg.tools.schema_dump --check
+      - run: python -m dripleg.tools.build_docs --check
 
   tests:
     runs-on: ubuntu-latest

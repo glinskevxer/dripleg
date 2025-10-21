@@ -136,7 +136,7 @@ def work_issue(context: Context, number: str, assignee: str, on: str | None) -> 
 
 @work_group.command("start")
 @click.argument("number")
-@click.option("--on", default=None)
+@click.option("--on", default=None, help="The day work started.")
 @click.pass_obj
 def work_start(context: Context, number: str, on: str | None) -> None:
     """Mark an order as started."""
@@ -146,7 +146,7 @@ def work_start(context: Context, number: str, on: str | None) -> None:
 
 @work_group.command("complete")
 @click.argument("number")
-@click.option("--on", default=None)
+@click.option("--on", default=None, help="The day the work finished.")
 @click.option("--cost", default=None, help="What it actually cost.")
 @click.pass_obj
 def work_complete(context: Context, number: str, on: str | None, cost: str | None) -> None:

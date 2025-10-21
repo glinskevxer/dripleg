@@ -42,7 +42,7 @@ def programme_due(context: Context, on: str | None) -> None:
 
 
 @programme_group.command("overdue")
-@click.option("--on", default=None)
+@click.option("--on", default=None, help="The day to work it out as at.")
 @click.pass_obj
 def programme_overdue(context: Context, on: str | None) -> None:
     """Only the traps that are late."""
@@ -74,6 +74,7 @@ def programme_overdue(context: Context, on: str | None) -> None:
     type=click.Choice(["model", "principle", "service", "pressure"]),
     default="model",
     show_default=True,
+    help="Which way to cut the failure history.",
 )
 @click.pass_obj
 def programme_reliability(context: Context, by: str) -> None:

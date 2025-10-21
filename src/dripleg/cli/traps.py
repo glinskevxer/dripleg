@@ -33,20 +33,29 @@ def trap_group() -> None:
     type=click.Choice([s.value for s in ServiceType]),
     default=ServiceType.DRIP.value,
     show_default=True,
+    help="What the trap drains.",
 )
 @click.option(
     "--access",
     type=click.Choice([a.value for a in Accessibility]),
     default=Accessibility.GROUND_LEVEL.value,
     show_default=True,
+    help="How much work it is to reach.",
 )
 @click.option(
     "--criticality",
     type=click.Choice([c.value for c in Criticality]),
     default=Criticality.NUISANCE.value,
     show_default=True,
+    help="What it costs the plant if this trap is wrong.",
 )
-@click.option("--profile", "profile_code", default="CONT", show_default=True)
+@click.option(
+    "--profile",
+    "profile_code",
+    default="CONT",
+    show_default=True,
+    help="Operating profile code.",
+)
 @click.option("--installed", required=True, help="Date the fitted trap went in.")
 @click.option(
     "--to",
@@ -56,7 +65,13 @@ def trap_group() -> None:
     help="Overrides the header's destination.",
 )
 @click.option("--no-strainer", is_flag=True, help="No strainer ahead of the trap.")
-@click.option("--valves", default=2, show_default=True, type=int)
+@click.option(
+    "--valves",
+    default=2,
+    show_default=True,
+    type=int,
+    help="How many isolation valves the station has.",
+)
 @click.option("--interval", default=None, type=int, help="Survey interval override, months.")
 @click.option("--note", default="", help="Anything the crew needs to know.")
 @click.pass_obj
@@ -102,7 +117,12 @@ def trap_add(
 
 @trap_group.command("list")
 @click.option("--area", default=None, help="Only this area.")
-@click.option("--service", default=None, type=click.Choice([s.value for s in ServiceType]))
+@click.option(
+    "--service",
+    default=None,
+    type=click.Choice([s.value for s in ServiceType]),
+    help="Only traps on this service.",
+)
 @click.option("--live", is_flag=True, help="Only traps still in service today.")
 @click.pass_obj
 def trap_list(context: Context, area: str | None, service: str | None, live: bool) -> None:

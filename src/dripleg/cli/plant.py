@@ -24,7 +24,12 @@ def site_group() -> None:
 @click.argument("name")
 @click.option("--operator", required=True, help="Who runs the plant.")
 @click.option("--start-month", default=1, show_default=True, help="Programme year start month.")
-@click.option("--fuel-basis", default="delivered natural gas", show_default=True)
+@click.option(
+    "--fuel-basis",
+    default="delivered natural gas",
+    show_default=True,
+    help="What the fuel price on this site is quoted for.",
+)
 @click.pass_obj
 def site_add(
     context: Context,
@@ -123,7 +128,13 @@ def header_group() -> None:
 @click.argument("name")
 @click.option("--psig", required=True, type=float, help="Operating pressure.")
 @click.option("--design-psig", default=None, type=float, help="Design pressure.")
-@click.option("--discharge-psig", default=0.0, type=float, show_default=True)
+@click.option(
+    "--discharge-psig",
+    default=0.0,
+    type=float,
+    show_default=True,
+    help="Pressure the traps on it discharge against.",
+)
 @click.option(
     "--to",
     "destination",

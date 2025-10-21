@@ -5,3 +5,4 @@
 # Written by a program and checked in for readers. Marked so GitHub leaves
 # them out of the language statistics and shows them collapsed in a review.
 docs/schema.md linguist-generated=true
+docs/commands.md linguist-generated=true
