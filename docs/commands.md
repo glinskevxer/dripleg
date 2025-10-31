@@ -2,7 +2,7 @@
 
 # Commands
 
-38 commands.
+44 commands.
 
 ## `dripleg about`
 
@@ -171,6 +171,53 @@ Stations that keep failing whatever is fitted to them.
 | option | help | default |
 | --- | --- | --- |
 | `--at-least` | Failures to qualify. | 2 |
+
+## `dripleg route add`
+
+Add an empty route, or update the timings on one.
+
+| option | help | default |
+| --- | --- | --- |
+| `code` | positional |  |
+| `name` | positional |  |
+| `--minutes-per-stop` | How long one trap takes. | 6.0 |
+| `--walk-minutes` | Getting there and back. | 30.0 |
+
+## `dripleg route coverage`
+
+Traps on the register that no route visits.
+
+## `dripleg route list`
+
+Every route at a site.
+
+## `dripleg route show`
+
+The walk, in order, with anything no longer on the register flagged.
+
+| option | help | default |
+| --- | --- | --- |
+| `code` | positional |  |
+
+## `dripleg route split`
+
+Cut a route into day sized pieces, keeping the order.
+
+| option | help | default |
+| --- | --- | --- |
+| `code` | positional |  |
+| `--days` | How many days to spread it over. | 2 |
+
+## `dripleg route stop`
+
+Add or drop one stop, keeping the rest of the walk in order.
+
+| option | help | default |
+| --- | --- | --- |
+| `code` | positional |  |
+| `tag` | positional |  |
+| `--after` | Insert it after this tag. |  |
+| `--drop` | Take the stop off instead. |  |
 
 ## `dripleg site add`
 

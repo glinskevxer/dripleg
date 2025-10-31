@@ -282,11 +282,7 @@ def test_a_trap_that_failed_twice_shows_as_a_repeat_offender(plant: str, tmp_pat
     run(plant, "--site", "WRX1", "loss", "report", "S2025-1", "--save")
     import_survey(plant, "S2025-2", "2025-10-13", AUTUMN, tmp_path)
     run(plant, "--site", "WRX1", "loss", "report", "S2025-2", "--save")
-    repeats = payload(
-        run(plant, "--site", "WRX1", "--json", "programme", "repeat-offenders").output
-        if False
-        else run(plant, "--site", "WRX1", "--json", "programme", "repeat-offenders")
-    )
+    repeats = payload(run(plant, "--site", "WRX1", "--json", "programme", "repeat-offenders"))
     assert isinstance(repeats, list)
     assert [row["tag"] for row in repeats] == ["B12-MP-0003"]
 
