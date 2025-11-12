@@ -2,7 +2,7 @@
 
 # Commands
 
-44 commands.
+46 commands.
 
 ## `dripleg about`
 
@@ -296,6 +296,23 @@ Add a trap station, or update the one that is there.
 | `--valves` | How many isolation valves the station has. | 2 |
 | `--interval` | Survey interval override, months. |  |
 | `--note` | Anything the crew needs to know. |  |
+
+## `dripleg trap export`
+
+Write the register out in the shape `trap import` reads back.
+
+| option | help | default |
+| --- | --- | --- |
+| `--live` | Only traps still in service today. |  |
+
+## `dripleg trap import`
+
+Read an asset register export into the book.
+
+| option | help | default |
+| --- | --- | --- |
+| `path` | positional |  |
+| `--dry-run` | Read the file and report, write nothing. |  |
 
 ## `dripleg trap list`
 

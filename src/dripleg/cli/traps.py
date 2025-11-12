@@ -2,12 +2,16 @@
 
 from __future__ import annotations
 
+import csv
 import datetime as dt
+import sys
+from pathlib import Path
 
 import click
 
 from dripleg.cli.context import Context
 from dripleg.cli.output import emit_facts, emit_rows
+from dripleg.ingest.register_reader import read_register_csv
 from dripleg.model.attributes import Accessibility, Criticality, ServiceType
 from dripleg.model.header import DischargeDestination
 from dripleg.model.installation import TrapInstallation
@@ -17,7 +21,23 @@ from dripleg.store.catalogue_repo import CatalogueRepository, ProfileRepository
 from dripleg.store.plant_repo import PlantRepository
 from dripleg.store.station_repo import StationRepository
 
-__all__ = ["trap_group"]
+__all__ = ["EXPORT_COLUMNS", "trap_group"]
+
+EXPORT_COLUMNS = (
+    "tag",
+    "manufacturer",
+    "model",
+    "installed",
+    "service",
+    "access",
+    "criticality",
+    "profile",
+    "destination",
+    "strainer",
+    "valves",
+    "interval",
+    "note",
+)
 
 
 @click.group("trap")
@@ -202,6 +222,70 @@ def trap_refit(context: Context, tag: str, model_code: str, on: str) -> None:
     refitted = station.replaced_with(model, dt.date.fromisoformat(on))
     repo.save(refitted)
     emit_facts(context, _facts(refitted))
+
+
+@trap_group.command("import")
+@click.argument("path", type=click.Path(exists=True, dir_okay=False, path_type=Path))
+@click.option("--dry-run", is_flag=True, help="Read the file and report, write nothing.")
+@click.pass_obj
+def trap_import(context: Context, path: Path, dry_run: bool) -> None:
+    """Read an asset register export into the book."""
+
+    plant = PlantRepository(context.book)
+    result = read_register_csv(
+        path.read_text(encoding="utf-8"),
+        context.site(),
+        plant.list_headers(context.site()),
+        CatalogueRepository(context.book).load_catalogue(),
+        ProfileRepository(context.book).list_for(context.site()),
+    )
+    repo = StationRepository(context.book)
+    if not dry_run:
+        with context.book.transaction():
+            for station in result.stations:
+                repo.save(station)
+    emit_facts(
+        context,
+        {
+            "file": str(path),
+            "content_hash": result.content_hash,
+            "read": result.read,
+            "quarantined": result.rejected,
+            "written": 0 if dry_run else result.read,
+            "dry_run": dry_run,
+            "quarantine": [str(row) for row in result.quarantined],
+        },
+    )
+
+
+@trap_group.command("export")
+@click.option("--live", is_flag=True, help="Only traps still in service today.")
+@click.pass_obj
+def trap_export(context: Context, live: bool) -> None:
+    """Write the register out in the shape `trap import` reads back."""
+
+    register = StationRepository(context.book).load_register(context.site())
+    stations = register.in_service_on(dt.date.today()) if live else list(register)
+    writer = csv.writer(sys.stdout, lineterminator="\n")
+    writer.writerow(EXPORT_COLUMNS)
+    for station in stations:
+        writer.writerow(
+            [
+                str(station.tag),
+                station.model.manufacturer,
+                station.model.code,
+                station.installed_on.isoformat(),
+                station.service.value,
+                station.accessibility.value,
+                station.criticality.value,
+                station.profile.code,
+                "" if station.destination is None else station.destination.value,
+                "y" if station.strainer_fitted else "n",
+                station.isolation_valves,
+                station.interval_months_override or "",
+                station.note,
+            ]
+        )
 
 
 def _facts(station: TrapInstallation) -> dict[str, object]:
