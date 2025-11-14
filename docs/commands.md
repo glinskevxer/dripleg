@@ -2,7 +2,7 @@
 
 # Commands
 
-46 commands.
+47 commands.
 
 ## `dripleg about`
 
@@ -139,6 +139,15 @@ Add an operating profile to a site.
 ## `dripleg profile list`
 
 Every operating profile at a site.
+
+## `dripleg programme compare`
+
+Hold two saved surveys against each other, trap by trap.
+
+| option | help | default |
+| --- | --- | --- |
+| `earlier` | positional |  |
+| `later` | positional |  |
 
 ## `dripleg programme due`
 

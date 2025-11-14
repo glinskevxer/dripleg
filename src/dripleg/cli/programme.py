@@ -11,8 +11,10 @@ from dripleg.cli.loading import register_for
 from dripleg.cli.output import emit_lines, emit_rows
 from dripleg.programme.reliability import build_reliability
 from dripleg.programme.schedule import build_schedule
+from dripleg.programme.trend import compare_surveys
 from dripleg.report.programme_report import build_programme_report
 from dripleg.report.table import Column
+from dripleg.report.trend_report import build_trend_report
 from dripleg.store.finding_repo import FindingRepository
 
 __all__ = ["programme_group"]
@@ -66,6 +68,22 @@ def programme_overdue(context: Context, on: str | None) -> None:
         keys=["tag", "last_seen", "due", "days_late"],
         empty="nothing overdue",
     )
+
+
+@programme_group.command("compare")
+@click.argument("earlier")
+@click.argument("later")
+@click.pass_obj
+def programme_compare(context: Context, earlier: str, later: str) -> None:
+    """Hold two saved surveys against each other, trap by trap."""
+
+    repo = FindingRepository(context.book)
+    trend = compare_surveys(
+        repo.for_survey(context.site(), earlier),
+        repo.for_survey(context.site(), later),
+    )
+    report = build_trend_report(trend)
+    emit_lines(context, report.lines(), report.as_dict())
 
 
 @programme_group.command("reliability")
