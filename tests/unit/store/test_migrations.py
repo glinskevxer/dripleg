@@ -23,7 +23,7 @@ def test_migration_numbers_are_unique_and_run_from_one() -> None:
 def test_every_migration_has_a_name_and_some_sql() -> None:
     for migration in MIGRATIONS:
         assert migration.name.strip()
-        assert "CREATE" in migration.sql.upper()
+        assert any(word in migration.sql.upper() for word in ("CREATE", "ALTER", "DROP"))
 
 
 def test_a_checksum_follows_the_sql() -> None:

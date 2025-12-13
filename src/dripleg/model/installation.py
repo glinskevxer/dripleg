@@ -44,6 +44,9 @@ class TrapInstallation:
     test_valve_fitted: bool = False
     insulated: bool = True
     interval_months_override: int | None = None
+    pipe_nominal: str | None = None
+    run_length_ft: float | None = None
+    warmup_minutes: float = 30.0
     note: str = ""
 
     def __post_init__(self) -> None:
@@ -69,6 +72,15 @@ class TrapInstallation:
                 "a survey interval override runs from one month to five years",
                 field="interval_months_override",
             )
+        if self.run_length_ft is not None and self.run_length_ft <= 0:
+            raise ValidationError("a run of pipe has a length", field="run_length_ft")
+        if (self.run_length_ft is None) != (self.pipe_nominal is None):
+            raise ValidationError(
+                "a drip station needs both a pipe size and a run length, or neither",
+                field="pipe_nominal",
+            )
+        if self.warmup_minutes <= 0:
+            raise ValidationError("a warm up takes some time", field="warmup_minutes")
         if not self.model.suits_pressure(self.header.operating_pressure):
             raise ValidationError(
                 f"{self.model.code} is rated to {self.model.max_operating_pressure} "
@@ -113,6 +125,12 @@ class TrapInstallation:
         return add_months(surveyed_on, self.survey_interval_months)
 
     @property
+    def has_geometry(self) -> bool:
+        """Whether this station carries enough to work a condensate load out."""
+
+        return self.pipe_nominal is not None and self.run_length_ft is not None
+
+    @property
     def can_be_isolated(self) -> bool:
         """Whether the trap can be changed without shutting the header down."""
 
@@ -145,6 +163,9 @@ class TrapInstallation:
             test_valve_fitted=self.test_valve_fitted,
             insulated=self.insulated,
             interval_months_override=self.interval_months_override,
+            pipe_nominal=self.pipe_nominal,
+            run_length_ft=self.run_length_ft,
+            warmup_minutes=self.warmup_minutes,
             note=self.note,
         )
 

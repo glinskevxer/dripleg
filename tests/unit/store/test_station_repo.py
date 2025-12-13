@@ -173,3 +173,29 @@ def test_the_tag_columns_are_written_out_for_the_indexes(repo: StationRepository
     row = repo.book.one("SELECT area_code, system_code, sequence FROM trap_station")
     assert row is not None
     assert (row["area_code"], row["system_code"], row["sequence"]) == ("B12", "MP", 43)
+
+
+def test_the_geometry_survives_the_trip(repo: StationRepository) -> None:
+    station = a_station(pipe_nominal="6", run_length_ft=240.0, warmup_minutes=45.0)
+    repo.save(station)
+    stored = repo.get("WRX1", "B12-MP-43")
+    assert stored.pipe_nominal == "6"
+    assert stored.run_length_ft == pytest.approx(240.0)
+    assert stored.warmup_minutes == pytest.approx(45.0)
+    assert stored.has_geometry
+
+
+def test_a_station_with_no_geometry_comes_back_without_any(repo: StationRepository) -> None:
+    repo.save(a_station())
+    stored = repo.get("WRX1", "B12-MP-43")
+    assert stored.pipe_nominal is None
+    assert stored.run_length_ft is None
+    assert stored.warmup_minutes == pytest.approx(30.0)
+    assert not stored.has_geometry
+
+
+def test_the_geometry_comes_back_on_a_loaded_register(repo: StationRepository) -> None:
+    repo.save(a_station(pipe_nominal="4", run_length_ft=180.0))
+    station = repo.load_register("WRX1").get("B12-MP-43")
+    assert station.has_geometry
+    assert station.pipe_nominal == "4"

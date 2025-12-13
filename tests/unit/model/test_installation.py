@@ -165,3 +165,39 @@ def test_a_retired_station_takes_no_more_traps() -> None:
 
 def test_printing_an_installation() -> None:
     assert str(an_installation()) == "B12-MP-0043 drip on Machine room main"
+
+
+def test_a_station_without_geometry_cannot_be_sized() -> None:
+    assert not an_installation().has_geometry
+
+
+def test_a_station_with_a_pipe_and_a_run_can_be_sized() -> None:
+    station = an_installation(pipe_nominal="4", run_length_ft=180.0)
+    assert station.has_geometry
+    assert station.run_length_ft == 180.0
+    assert station.warmup_minutes == 30.0
+
+
+def test_half_the_geometry_is_refused() -> None:
+    with pytest.raises(ValidationError, match="both a pipe size and a run length"):
+        an_installation(pipe_nominal="4")
+    with pytest.raises(ValidationError, match="both a pipe size and a run length"):
+        an_installation(run_length_ft=180.0)
+
+
+def test_a_run_of_no_length_is_refused() -> None:
+    with pytest.raises(ValidationError, match="has a length"):
+        an_installation(pipe_nominal="4", run_length_ft=0.0)
+
+
+def test_a_warm_up_of_no_time_is_refused() -> None:
+    with pytest.raises(ValidationError, match="takes some time"):
+        an_installation(warmup_minutes=0.0)
+
+
+def test_a_refit_carries_the_geometry_across() -> None:
+    station = an_installation(pipe_nominal="4", run_length_ft=180.0, warmup_minutes=45.0)
+    swapped = station.replaced_with(a_model("TD75"), dt.date(2025, 4, 2))
+    assert swapped.pipe_nominal == "4"
+    assert swapped.run_length_ft == 180.0
+    assert swapped.warmup_minutes == 45.0

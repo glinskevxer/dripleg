@@ -2,7 +2,7 @@
 
 # Schema
 
-5 migrations, 15 tables.
+6 migrations, 15 tables.
 
 ## area
 
@@ -214,6 +214,9 @@ Indexes: observation_by_condition, observation_by_tag.
 | insulated | INTEGER | yes |
 | interval_months_override | INTEGER | no |
 | note | TEXT | yes |
+| pipe_nominal | TEXT | no |
+| run_length_ft | REAL | no |
+| warmup_minutes | REAL | no |
 
 Indexes: station_by_header, station_by_model, station_by_service.
 

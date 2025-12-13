@@ -31,7 +31,7 @@ _COLUMNS = (
     "site_code, tag, area_code, system_code, sequence, model_manufacturer, model_code, "
     "service, accessibility, criticality, profile_code, installed_on, removed_on, "
     "destination, strainer_fitted, isolation_valves, test_valve_fitted, insulated, "
-    "interval_months_override, note"
+    "interval_months_override, pipe_nominal, run_length_ft, warmup_minutes, note"
 )
 
 
@@ -52,7 +52,7 @@ class StationRepository:
         with self.book.transaction():
             self.book.execute(
                 f"INSERT INTO trap_station ({_COLUMNS}) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
                 "ON CONFLICT(site_code, tag) DO UPDATE SET "
                 "area_code = excluded.area_code, system_code = excluded.system_code, "
                 "sequence = excluded.sequence, "
@@ -66,6 +66,9 @@ class StationRepository:
                 "test_valve_fitted = excluded.test_valve_fitted, "
                 "insulated = excluded.insulated, "
                 "interval_months_override = excluded.interval_months_override, "
+                "pipe_nominal = excluded.pipe_nominal, "
+                "run_length_ft = excluded.run_length_ft, "
+                "warmup_minutes = excluded.warmup_minutes, "
                 "note = excluded.note",
                 (
                     station.site.value,
@@ -87,6 +90,9 @@ class StationRepository:
                     1 if station.test_valve_fitted else 0,
                     1 if station.insulated else 0,
                     station.interval_months_override,
+                    station.pipe_nominal,
+                    station.run_length_ft,
+                    station.warmup_minutes,
                     station.note,
                 ),
             )
@@ -202,5 +208,8 @@ class StationRepository:
             test_valve_fitted=bool(row["test_valve_fitted"]),
             insulated=bool(row["insulated"]),
             interval_months_override=None if override is None else int(override),
+            pipe_nominal=None if row["pipe_nominal"] is None else str(row["pipe_nominal"]),
+            run_length_ft=(None if row["run_length_ft"] is None else float(row["run_length_ft"])),
+            warmup_minutes=float(row["warmup_minutes"] or 30.0),
             note=str(row["note"]),
         )

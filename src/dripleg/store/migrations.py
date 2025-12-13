@@ -330,12 +330,23 @@ MIGRATION_005 = Migration(
     """,
 )
 
+MIGRATION_006 = Migration(
+    6,
+    "the geometry a sizing check needs",
+    """
+    ALTER TABLE trap_station ADD COLUMN pipe_nominal TEXT;
+    ALTER TABLE trap_station ADD COLUMN run_length_ft REAL;
+    ALTER TABLE trap_station ADD COLUMN warmup_minutes REAL;
+    """,
+)
+
 MIGRATIONS: tuple[Migration, ...] = (
     MIGRATION_001,
     MIGRATION_002,
     MIGRATION_003,
     MIGRATION_004,
     MIGRATION_005,
+    MIGRATION_006,
 )
 
 
