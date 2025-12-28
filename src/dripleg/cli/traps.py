@@ -10,6 +10,7 @@ from pathlib import Path
 import click
 
 from dripleg.cli.context import Context
+from dripleg.cli.loading import register_for
 from dripleg.cli.output import emit_facts, emit_rows
 from dripleg.ingest.register_reader import read_register_csv
 from dripleg.model.attributes import Accessibility, Criticality, ServiceType
@@ -17,9 +18,11 @@ from dripleg.model.header import DischargeDestination
 from dripleg.model.installation import TrapInstallation
 from dripleg.model.tags import SiteCode, TrapTag
 from dripleg.report.table import Column
+from dripleg.sizing.audit import audit_sizing
 from dripleg.store.catalogue_repo import CatalogueRepository, ProfileRepository
 from dripleg.store.plant_repo import PlantRepository
 from dripleg.store.station_repo import StationRepository
+from dripleg.units.temperature import Temperature
 
 __all__ = ["EXPORT_COLUMNS", "trap_group"]
 
@@ -93,6 +96,15 @@ def trap_group() -> None:
     help="How many isolation valves the station has.",
 )
 @click.option("--interval", default=None, type=int, help="Survey interval override, months.")
+@click.option("--pipe", "pipe_nominal", default=None, help="Nominal pipe size of the run.")
+@click.option("--run-ft", default=None, type=float, help="Length of run this trap drains.")
+@click.option(
+    "--warmup-minutes",
+    default=30.0,
+    show_default=True,
+    type=float,
+    help="How long the run takes to come up to temperature.",
+)
 @click.option("--note", default="", help="Anything the crew needs to know.")
 @click.pass_obj
 def trap_add(
@@ -108,6 +120,9 @@ def trap_add(
     no_strainer: bool,
     valves: int,
     interval: int | None,
+    pipe_nominal: str | None,
+    run_ft: float | None,
+    warmup_minutes: float,
     note: str,
 ) -> None:
     """Add a trap station, or update the one that is there."""
@@ -129,6 +144,9 @@ def trap_add(
         strainer_fitted=not no_strainer,
         isolation_valves=valves,
         interval_months_override=interval,
+        pipe_nominal=pipe_nominal,
+        run_length_ft=run_ft,
+        warmup_minutes=warmup_minutes,
         note=note,
     )
     StationRepository(context.book).save(station)
@@ -222,6 +240,56 @@ def trap_refit(context: Context, tag: str, model_code: str, on: str) -> None:
     refitted = station.replaced_with(model, dt.date.fromisoformat(on))
     repo.save(refitted)
     emit_facts(context, _facts(refitted))
+
+
+@trap_group.command("sizing")
+@click.option("--wrong-only", is_flag=True, help="Only the stations that are not right.")
+@click.option(
+    "--cold-f", default=60.0, show_default=True, type=float, help="Temperature the run starts from."
+)
+@click.pass_obj
+def trap_sizing(context: Context, wrong_only: bool, cold_f: float) -> None:
+    """Hold every drip station against the condensate it has to clear."""
+
+    audit = audit_sizing(register_for(context), cold=Temperature.from_fahrenheit(cold_f))
+    rows = audit.wrong if wrong_only else audit.rows
+    emit_rows(
+        context,
+        [
+            Column("tag"),
+            Column("pipe"),
+            Column.number("run ft"),
+            Column.number("warm up"),
+            Column.number("running"),
+            Column.number("capacity"),
+            Column.number("ratio"),
+            Column("verdict"),
+        ],
+        [
+            (
+                str(row.tag),
+                row.station.pipe_nominal or "",
+                f"{row.station.run_length_ft:,.0f}" if row.station.run_length_ft else "",
+                f"{row.warmup_pph:,.0f}",
+                f"{row.running_pph:,.1f}",
+                f"{row.check.capacity.pounds_per_hour:,.0f}",
+                f"{row.check.ratio:.1f}",
+                row.verdict.label,
+            )
+            for row in rows
+        ],
+        keys=[
+            "tag",
+            "pipe",
+            "run_ft",
+            "warmup_pph",
+            "running_pph",
+            "capacity_pph",
+            "ratio",
+            "verdict",
+        ],
+        empty="nothing on this register can be sized",
+    )
 
 
 @trap_group.command("import")

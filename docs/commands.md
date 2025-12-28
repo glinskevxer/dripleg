@@ -2,7 +2,7 @@
 
 # Commands
 
-47 commands.
+48 commands.
 
 ## `dripleg about`
 
@@ -304,6 +304,9 @@ Add a trap station, or update the one that is there.
 | `--no-strainer` | No strainer ahead of the trap. |  |
 | `--valves` | How many isolation valves the station has. | 2 |
 | `--interval` | Survey interval override, months. |  |
+| `--pipe` | Nominal pipe size of the run. |  |
+| `--run-ft` | Length of run this trap drains. |  |
+| `--warmup-minutes` | How long the run takes to come up to temperature. | 30.0 |
 | `--note` | Anything the crew needs to know. |  |
 
 ## `dripleg trap export`
@@ -359,6 +362,15 @@ Everything on one station.
 | option | help | default |
 | --- | --- | --- |
 | `tag` | positional |  |
+
+## `dripleg trap sizing`
+
+Hold every drip station against the condensate it has to clear.
+
+| option | help | default |
+| --- | --- | --- |
+| `--wrong-only` | Only the stations that are not right. |  |
+| `--cold-f` | Temperature the run starts from. | 60.0 |
 
 ## `dripleg work complete`
 
