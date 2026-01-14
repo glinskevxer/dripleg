@@ -8,6 +8,7 @@ import sys
 import click
 
 from dripleg import __version__
+from dripleg.cli.book import book_group
 from dripleg.cli.catalogue import model_group, profile_group
 from dripleg.cli.context import DEFAULT_BOOK, Context
 from dripleg.cli.costing import loss_group, prices_group
@@ -83,6 +84,7 @@ def about(context: Context) -> None:
         click.echo(f"{key.replace('_', ' '):<{width}}  {value}")
 
 
+cli.add_command(book_group)
 cli.add_command(site_group)
 cli.add_command(area_group)
 cli.add_command(header_group)

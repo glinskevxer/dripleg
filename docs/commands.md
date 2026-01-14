@@ -2,7 +2,7 @@
 
 # Commands
 
-48 commands.
+51 commands.
 
 ## `dripleg about`
 
@@ -22,6 +22,18 @@ Add an area to a site.
 ## `dripleg area list`
 
 Every area at a site.
+
+## `dripleg book audit`
+
+Look for the inconsistencies foreign keys cannot catch.
+
+## `dripleg book check`
+
+Run sqlite's own integrity check and report the schema state.
+
+## `dripleg book vacuum`
+
+Rebuild the file, which reclaims space after a big delete.
 
 ## `dripleg header add`
 
