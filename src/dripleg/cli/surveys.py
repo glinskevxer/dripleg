@@ -13,6 +13,7 @@ from dripleg.cli.output import emit_facts, emit_lines, emit_rows
 from dripleg.errors import ConflictError
 from dripleg.ingest.profile import profile_named
 from dripleg.ingest.reader import read_survey_csv
+from dripleg.programme.calibration import calibrate
 from dripleg.report.survey_report import build_survey_report
 from dripleg.report.table import Column
 from dripleg.store.survey_repo import SurveyRepository
@@ -152,6 +153,117 @@ def survey_list(context: Context) -> None:
         ],
         keys=["reference", "name", "contractor", "started", "finished", "readings"],
         empty="no surveys yet",
+    )
+
+
+@survey_group.command("calibration")
+@click.argument("reference")
+@click.option("--rated-only", is_flag=True, help="Only technicians with enough readings.")
+@click.pass_obj
+def survey_calibration(context: Context, reference: str, rated_only: bool) -> None:
+    """How each technician's own codes line up with the rules."""
+
+    survey = SurveyRepository(context.book).get(context.site(), reference)
+    report = calibrate(survey, diagnosis_for(context, reference))
+    records = report.reportable() if rated_only else report.records
+    emit_rows(
+        context,
+        [
+            Column("technician"),
+            Column.number("read"),
+            Column.number("agreed"),
+            Column.number("over"),
+            Column.number("under"),
+            Column.number("agreement"),
+            Column.number("two method"),
+            Column("leans"),
+        ],
+        [
+            (
+                record.technician,
+                record.read,
+                record.agreed,
+                record.over_called,
+                record.under_called,
+                f"{record.agreement_rate:.0%}" if record.is_reportable else "n/a",
+                f"{record.two_method_rate:.0%}",
+                record.leans,
+            )
+            for record in records
+        ],
+        keys=[
+            "technician",
+            "read",
+            "agreed",
+            "over_called",
+            "under_called",
+            "agreement",
+            "two_method",
+            "leans",
+        ],
+        empty="nobody has read anything on that survey",
+    )
+
+
+@survey_group.command("readings")
+@click.argument("tag")
+@click.pass_obj
+def survey_readings(context: Context, tag: str) -> None:
+    """Every reading ever taken on one trap, oldest first."""
+
+    readings = SurveyRepository(context.book).readings_for(context.site(), tag)
+    emit_rows(
+        context,
+        [
+            Column("date"),
+            Column("by"),
+            Column("code"),
+            Column.number("dB"),
+            Column.number("cycles/min"),
+            Column.number("in"),
+            Column.number("out"),
+            Column("note", max_width=30),
+        ],
+        [
+            (
+                observation.observed_on.isoformat(),
+                observation.technician,
+                observation.reported_condition.label,
+                (
+                    f"{observation.ultrasonic.decibels:.0f}"
+                    if observation.ultrasonic is not None
+                    else ""
+                ),
+                (
+                    f"{observation.cycles_per_minute:.1f}"
+                    if observation.cycles_per_minute is not None
+                    else ""
+                ),
+                (
+                    f"{observation.temperature.upstream.fahrenheit:.0f}"
+                    if observation.temperature is not None
+                    else ""
+                ),
+                (
+                    f"{observation.temperature.downstream.fahrenheit:.0f}"
+                    if observation.temperature is not None
+                    else ""
+                ),
+                observation.note,
+            )
+            for observation in readings
+        ],
+        keys=[
+            "date",
+            "by",
+            "code",
+            "decibels",
+            "cycles_per_minute",
+            "upstream",
+            "downstream",
+            "note",
+        ],
+        empty="nothing has ever been read on that trap",
     )
 
 

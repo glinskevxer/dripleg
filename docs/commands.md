@@ -2,7 +2,7 @@
 
 # Commands
 
-51 commands.
+53 commands.
 
 ## `dripleg about`
 
@@ -256,6 +256,15 @@ Add a site, or update the one that is already there.
 
 Every site in the book.
 
+## `dripleg survey calibration`
+
+How each technician's own codes line up with the rules.
+
+| option | help | default |
+| --- | --- | --- |
+| `reference` | positional |  |
+| `--rated-only` | Only technicians with enough readings. |  |
+
 ## `dripleg survey close`
 
 Close a survey so nothing else lands in it.
@@ -290,6 +299,14 @@ Open a survey to import readings into.
 | `name` | positional |  |
 | `--contractor` | Who walked it. |  |
 | `--started` | First day on site. |  |
+
+## `dripleg survey readings`
+
+Every reading ever taken on one trap, oldest first.
+
+| option | help | default |
+| --- | --- | --- |
+| `tag` | positional |  |
 
 ## `dripleg survey report`
 
