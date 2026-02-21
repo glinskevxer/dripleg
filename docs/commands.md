@@ -2,7 +2,7 @@
 
 # Commands
 
-53 commands.
+54 commands.
 
 ## `dripleg about`
 
@@ -400,6 +400,14 @@ Hold every drip station against the condensate it has to clear.
 | --- | --- | --- |
 | `--wrong-only` | Only the stations that are not right. |  |
 | `--cold-f` | Temperature the run starts from. | 60.0 |
+
+## `dripleg work backlog`
+
+What the open jobs have cost since the survey that found them.
+
+| option | help | default |
+| --- | --- | --- |
+| `--as-at` | The day to accrue up to. |  |
 
 ## `dripleg work complete`
 

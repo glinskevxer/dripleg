@@ -7,14 +7,15 @@ import datetime as dt
 import click
 
 from dripleg.cli.context import Context
-from dripleg.cli.loading import work_list_for
+from dripleg.cli.loading import register_for, work_list_for
 from dripleg.cli.output import emit_facts, emit_lines, emit_rows
 from dripleg.errors import ConflictError
+from dripleg.loss.accrual import accrue_all
 from dripleg.repair.priority import Priority
 from dripleg.repair.workorder import WorkOrder
 from dripleg.report.table import Column
 from dripleg.report.work_report import build_work_report
-from dripleg.store.finding_repo import WorkOrderRepository
+from dripleg.store.finding_repo import FindingRepository, WorkOrderRepository
 from dripleg.units.money import Money
 
 __all__ = ["work_group"]
@@ -120,6 +121,48 @@ def work_open(context: Context, overdue_on: str | None) -> None:
         ],
         keys=["number", "tag", "action", "state", "due", "assigned_to"],
         empty="nothing open",
+    )
+
+
+@work_group.command("backlog")
+@click.option("--as-at", default=None, help="The day to accrue up to.")
+@click.pass_obj
+def work_backlog(context: Context, as_at: str | None) -> None:
+    """What the open jobs have cost since the survey that found them."""
+
+    day = dt.date.fromisoformat(as_at) if as_at is not None else dt.date.today()
+    register = register_for(context)
+    findings = FindingRepository(context.book).latest_finding_per_trap(context.site())
+    entries = []
+    for order in WorkOrderRepository(context.book).open_orders(context.site()):
+        station = register.find(order.tag)
+        found = findings.get(order.tag)
+        if station is None or found is None:
+            continue
+        surveyed_on, finding = found
+        entries.append((station, surveyed_on, finding.annual_cost, finding.pounds_per_hour))
+    accruals = accrue_all(entries, as_at=day)
+    emit_rows(
+        context,
+        [
+            Column("tag"),
+            Column("found"),
+            Column.number("days"),
+            Column.number("lb lost"),
+            Column.number("accrued"),
+        ],
+        [
+            (
+                str(accrual.tag),
+                accrual.found_on.isoformat(),
+                accrual.days,
+                f"{accrual.steam.pounds:,.0f}",
+                str(accrual.cost),
+            )
+            for accrual in accruals
+        ],
+        keys=["tag", "found", "days", "pounds_lost", "accrued"],
+        empty="nothing open has ever been costed",
     )
 
 

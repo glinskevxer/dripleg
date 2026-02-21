@@ -154,6 +154,23 @@ class FindingRepository:
             )
         return latest
 
+    def latest_finding_per_trap(
+        self, site: SiteCode | str
+    ) -> dict[TrapTag, tuple[dt.date, StoredFinding]]:
+        """The most recent whole finding on every trap, with its survey date."""
+
+        rows = self.book.query(
+            "SELECT f.*, s.started_on FROM finding f JOIN survey s "
+            "ON s.site_code = f.site_code AND s.reference = f.survey_reference "
+            "WHERE f.site_code = ? ORDER BY s.started_on",
+            (_site(site).value,),
+        )
+        latest: dict[TrapTag, tuple[dt.date, StoredFinding]] = {}
+        for row in rows:
+            finding = self._from(row)
+            latest[finding.tag] = (dt.date.fromisoformat(str(row["started_on"])), finding)
+        return latest
+
     def all_verdicts_per_trap(self, site: SiteCode | str) -> dict[TrapTag, list[TrapCondition]]:
         """Every verdict on every trap, oldest first, for the reliability cuts."""
 
