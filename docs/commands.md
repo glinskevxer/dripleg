@@ -2,7 +2,7 @@
 
 # Commands
 
-54 commands.
+55 commands.
 
 ## `dripleg about`
 
@@ -457,6 +457,16 @@ Raise a work order for every job on the list, in rank order.
 | `--budget` | Only raise what fits. |  |
 | `--on` | The day the orders are raised. |  |
 | `--prefix` | Work order number prefix. | WO |
+
+## `dripleg work spares`
+
+Everything the work list needs ordering, one line per part.
+
+| option | help | default |
+| --- | --- | --- |
+| `reference` | positional |  |
+| `--budget` | Only what fits inside this. |  |
+| `--allowance` | Spare parts allowance on each line. | 0.1 |
 
 ## `dripleg work start`
 

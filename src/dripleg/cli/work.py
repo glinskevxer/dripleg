@@ -11,7 +11,8 @@ from dripleg.cli.loading import register_for, work_list_for
 from dripleg.cli.output import emit_facts, emit_lines, emit_rows
 from dripleg.errors import ConflictError
 from dripleg.loss.accrual import accrue_all
-from dripleg.repair.priority import Priority
+from dripleg.repair.priority import Priority, WorkList
+from dripleg.repair.spares import build_spares_list
 from dripleg.repair.workorder import WorkOrder
 from dripleg.report.table import Column
 from dripleg.report.work_report import build_work_report
@@ -121,6 +122,53 @@ def work_open(context: Context, overdue_on: str | None) -> None:
         ],
         keys=["number", "tag", "action", "state", "due", "assigned_to"],
         empty="nothing open",
+    )
+
+
+@work_group.command("spares")
+@click.argument("reference")
+@click.option("--budget", default=None, help="Only what fits inside this.")
+@click.option(
+    "--allowance",
+    default=0.10,
+    show_default=True,
+    type=float,
+    help="Spare parts allowance on each line.",
+)
+@click.pass_obj
+def work_spares(context: Context, reference: str, budget: str | None, allowance: float) -> None:
+    """Everything the work list needs ordering, one line per part."""
+
+    work = work_list_for(context, reference)
+    if budget is not None:
+        taken, _ = work.within(Money.parse(budget))
+        work = WorkList(taken)
+    spares = build_spares_list(work, allowance)
+    emit_rows(
+        context,
+        [
+            Column("maker"),
+            Column("code"),
+            Column("part"),
+            Column.number("jobs"),
+            Column.number("order"),
+            Column.number("each"),
+            Column.number("total"),
+        ],
+        [
+            (
+                line.manufacturer,
+                line.code,
+                line.part,
+                line.jobs,
+                line.quantity,
+                str(line.unit_price),
+                str(line.total),
+            )
+            for line in spares.lines
+        ],
+        keys=["manufacturer", "code", "part", "jobs", "quantity", "unit_price", "total"],
+        empty="the list needs no parts",
     )
 
 
