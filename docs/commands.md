@@ -2,7 +2,7 @@
 
 # Commands
 
-55 commands.
+59 commands.
 
 ## `dripleg about`
 
@@ -239,6 +239,36 @@ Add or drop one stop, keeping the rest of the walk in order.
 | `tag` | positional |  |
 | `--after` | Insert it after this tag. |  |
 | `--drop` | Take the stop off instead. |  |
+
+## `dripleg rules list`
+
+Every rule in the build, and whether this site runs it.
+
+| option | help | default |
+| --- | --- | --- |
+| `--off-only` | Only the rules that are switched off. |  |
+
+## `dripleg rules off`
+
+Switch a rule off at this site, with a reason on the record.
+
+| option | help | default |
+| --- | --- | --- |
+| `rule` | positional |  |
+| `--reason` | Why this site does not run it. |  |
+| `--on` | The day it was switched off. |  |
+
+## `dripleg rules on`
+
+Switch a rule back on.
+
+| option | help | default |
+| --- | --- | --- |
+| `rule` | positional |  |
+
+## `dripleg rules stale`
+
+Exclusions naming rules this build does not have any more.
 
 ## `dripleg site add`
 

@@ -15,6 +15,7 @@ from dripleg.cli.costing import loss_group, prices_group
 from dripleg.cli.plant import area_group, header_group, site_group
 from dripleg.cli.programme import programme_group
 from dripleg.cli.routes import route_group
+from dripleg.cli.rules import rules_group
 from dripleg.cli.surveys import survey_group
 from dripleg.cli.traps import trap_group
 from dripleg.cli.work import work_group
@@ -94,6 +95,7 @@ cli.add_command(prices_group)
 cli.add_command(loss_group)
 cli.add_command(programme_group)
 cli.add_command(route_group)
+cli.add_command(rules_group)
 cli.add_command(survey_group)
 cli.add_command(trap_group)
 cli.add_command(work_group)
