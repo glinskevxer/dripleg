@@ -340,6 +340,21 @@ MIGRATION_006 = Migration(
     """,
 )
 
+MIGRATION_007 = Migration(
+    7,
+    "rules a site has switched off",
+    """
+    CREATE TABLE rule_exclusion (
+        site_code    TEXT NOT NULL REFERENCES site(code) ON DELETE CASCADE,
+        rule_code    TEXT NOT NULL,
+        reason       TEXT NOT NULL,
+        excluded_on  TEXT NOT NULL,
+        PRIMARY KEY (site_code, rule_code),
+        CHECK (length(trim(reason)) > 0)
+    );
+    """,
+)
+
 MIGRATIONS: tuple[Migration, ...] = (
     MIGRATION_001,
     MIGRATION_002,
@@ -347,6 +362,7 @@ MIGRATIONS: tuple[Migration, ...] = (
     MIGRATION_004,
     MIGRATION_005,
     MIGRATION_006,
+    MIGRATION_007,
 )
 
 

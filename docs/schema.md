@@ -2,7 +2,7 @@
 
 # Schema
 
-6 migrations, 15 tables.
+7 migrations, 16 tables.
 
 ## area
 
@@ -135,6 +135,17 @@ Indexes: observation_by_condition, observation_by_tag.
 | route_code | TEXT | yes |
 | position | INTEGER | yes |
 | tag | TEXT | yes |
+
+1 check constraints.
+
+## rule_exclusion
+
+| column | type | required |
+| --- | --- | --- |
+| site_code | TEXT | yes |
+| rule_code | TEXT | yes |
+| reason | TEXT | yes |
+| excluded_on | TEXT | yes |
 
 1 check constraints.
 
