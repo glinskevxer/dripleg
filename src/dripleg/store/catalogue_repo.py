@@ -11,6 +11,7 @@ from dripleg.model.principles import OperatingPrinciple
 from dripleg.model.tags import SiteCode
 from dripleg.store.codes import enum_from_value, months_from_text, months_to_text
 from dripleg.store.db import Database
+from dripleg.store.keys import as_site
 from dripleg.units.money import Money
 from dripleg.units.pressure import Pressure
 
@@ -107,7 +108,7 @@ class ProfileRepository:
         self.book = book
 
     def save(self, site: SiteCode | str, profile: OperatingProfile) -> None:
-        site_code = site if isinstance(site, SiteCode) else SiteCode.parse(site)
+        site_code = as_site(site)
         with self.book.transaction():
             self.book.execute(
                 "INSERT INTO operating_profile (site_code, code, name, pattern, load_factor, "
@@ -126,7 +127,7 @@ class ProfileRepository:
             )
 
     def get(self, site: SiteCode | str, code: str) -> OperatingProfile:
-        site_code = site if isinstance(site, SiteCode) else SiteCode.parse(site)
+        site_code = as_site(site)
         row = self.book.one(
             "SELECT * FROM operating_profile WHERE site_code = ? AND code = ?",
             (site_code.value, code),
@@ -136,7 +137,7 @@ class ProfileRepository:
         return self._from(row)
 
     def list_for(self, site: SiteCode | str) -> list[OperatingProfile]:
-        site_code = site if isinstance(site, SiteCode) else SiteCode.parse(site)
+        site_code = as_site(site)
         rows = self.book.query(
             "SELECT * FROM operating_profile WHERE site_code = ? ORDER BY code",
             (site_code.value,),

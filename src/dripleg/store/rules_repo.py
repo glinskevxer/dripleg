@@ -22,6 +22,7 @@ from dripleg.diagnosis.rules import RuleSet
 from dripleg.errors import NotFoundError, ValidationError
 from dripleg.model.tags import SiteCode
 from dripleg.store.db import Database
+from dripleg.store.keys import as_site
 
 __all__ = ["RuleExclusion", "RulesRepository"]
 
@@ -58,7 +59,7 @@ class RulesRepository:
     def exclude(self, site: SiteCode | str, exclusion: RuleExclusion) -> None:
         if exclusion.rule_code not in self.rules:
             raise NotFoundError("rule", exclusion.rule_code)
-        site_code = site if isinstance(site, SiteCode) else SiteCode.parse(site)
+        site_code = as_site(site)
         with self.book.transaction():
             self.book.execute(
                 "INSERT INTO rule_exclusion (site_code, rule_code, reason, excluded_on) "
@@ -76,7 +77,7 @@ class RulesRepository:
     def include(self, site: SiteCode | str, rule_code: str) -> bool:
         """Switch a rule back on. Says whether it was off in the first place."""
 
-        site_code = site if isinstance(site, SiteCode) else SiteCode.parse(site)
+        site_code = as_site(site)
         wanted = rule_code.strip().upper()
         before = self.book.scalar(
             "SELECT COUNT(*) FROM rule_exclusion WHERE site_code = ? AND rule_code = ?",
@@ -90,7 +91,7 @@ class RulesRepository:
         return bool(before)
 
     def exclusions(self, site: SiteCode | str) -> list[RuleExclusion]:
-        site_code = site if isinstance(site, SiteCode) else SiteCode.parse(site)
+        site_code = as_site(site)
         rows = self.book.query(
             "SELECT * FROM rule_exclusion WHERE site_code = ? ORDER BY rule_code",
             (site_code.value,),

@@ -21,6 +21,7 @@ from dataclasses import dataclass
 
 from dripleg.model.tags import SiteCode
 from dripleg.store.db import Database
+from dripleg.store.keys import as_site
 
 __all__ = ["BookAudit", "BookFinding", "audit_book"]
 
@@ -72,7 +73,7 @@ def _tags(book: Database, site: str) -> set[str]:
 def audit_book(book: Database, site: SiteCode | str) -> BookAudit:
     """Walk one site's book looking for the inconsistencies keys cannot hold."""
 
-    site_code = (site if isinstance(site, SiteCode) else SiteCode.parse(site)).value
+    site_code = as_site(site).value
     known = _tags(book, site_code)
     findings: list[BookFinding] = []
 

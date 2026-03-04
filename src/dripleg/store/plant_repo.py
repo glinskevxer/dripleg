@@ -19,6 +19,7 @@ from dripleg.model.plant import Area, Site
 from dripleg.model.tags import AreaCode, SiteCode, SystemCode
 from dripleg.store.codes import enum_from_value
 from dripleg.store.db import Database
+from dripleg.store.keys import as_area, as_site, as_system
 from dripleg.units.pressure import Pressure
 
 __all__ = ["PlantRepository"]
@@ -95,8 +96,8 @@ class PlantRepository:
             )
 
     def get_area(self, site: SiteCode | str, code: AreaCode | str) -> Area:
-        site_code = site if isinstance(site, SiteCode) else SiteCode.parse(site)
-        area_code = code if isinstance(code, AreaCode) else AreaCode.parse(code)
+        site_code = as_site(site)
+        area_code = as_area(code)
         row = self.book.one(
             "SELECT * FROM area WHERE site_code = ? AND code = ?",
             (site_code.value, area_code.value),
@@ -106,14 +107,14 @@ class PlantRepository:
         return self._area_from(row)
 
     def list_areas(self, site: SiteCode | str) -> list[Area]:
-        site_code = site if isinstance(site, SiteCode) else SiteCode.parse(site)
+        site_code = as_site(site)
         rows = self.book.query(
             "SELECT * FROM area WHERE site_code = ? ORDER BY code", (site_code.value,)
         )
         return [self._area_from(row) for row in rows]
 
     def children_of(self, site: SiteCode | str, parent: AreaCode | str) -> list[Area]:
-        site_code = site if isinstance(site, SiteCode) else SiteCode.parse(site)
+        site_code = as_site(site)
         parent_code = parent if isinstance(parent, AreaCode) else AreaCode.parse(parent)
         rows = self.book.query(
             "SELECT * FROM area WHERE site_code = ? AND parent_code = ? ORDER BY code",
@@ -174,14 +175,14 @@ class PlantRepository:
     def list_headers(
         self, site: SiteCode | str, area: AreaCode | str | None = None
     ) -> list[SteamHeader]:
-        site_code = site if isinstance(site, SiteCode) else SiteCode.parse(site)
+        site_code = as_site(site)
         if area is None:
             rows = self.book.query(
                 "SELECT * FROM header WHERE site_code = ? ORDER BY area_code, system_code",
                 (site_code.value,),
             )
         else:
-            area_code = area if isinstance(area, AreaCode) else AreaCode.parse(area)
+            area_code = as_area(area)
             rows = self.book.query(
                 "SELECT * FROM header WHERE site_code = ? AND area_code = ? ORDER BY system_code",
                 (site_code.value, area_code.value),
@@ -194,9 +195,9 @@ class PlantRepository:
         area: AreaCode | str,
         system: SystemCode | str,
     ) -> tuple[str, str, str]:
-        site_code = site if isinstance(site, SiteCode) else SiteCode.parse(site)
-        area_code = area if isinstance(area, AreaCode) else AreaCode.parse(area)
-        system_code = system if isinstance(system, SystemCode) else SystemCode.parse(system)
+        site_code = as_site(site)
+        area_code = as_area(area)
+        system_code = as_system(system)
         return (site_code.value, area_code.value, system_code.value)
 
     @staticmethod

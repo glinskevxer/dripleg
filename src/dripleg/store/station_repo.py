@@ -9,7 +9,6 @@ them in Python.
 
 from __future__ import annotations
 
-import datetime as dt
 import sqlite3
 
 from dripleg.errors import NotFoundError
@@ -23,6 +22,7 @@ from dripleg.model.tags import SiteCode, TrapTag
 from dripleg.store.catalogue_repo import CatalogueRepository, ProfileRepository
 from dripleg.store.codes import enum_from_value
 from dripleg.store.db import Database
+from dripleg.store.keys import as_date, as_site, as_tag
 from dripleg.store.plant_repo import PlantRepository
 
 __all__ = ["StationRepository"]
@@ -33,10 +33,6 @@ _COLUMNS = (
     "destination, strainer_fitted, isolation_valves, test_valve_fitted, insulated, "
     "interval_months_override, pipe_nominal, run_length_ft, warmup_minutes, note"
 )
-
-
-def _date(value: object) -> dt.date:
-    return dt.date.fromisoformat(str(value))
 
 
 class StationRepository:
@@ -98,8 +94,8 @@ class StationRepository:
             )
 
     def get(self, site: SiteCode | str, tag: TrapTag | str) -> TrapInstallation:
-        site_code = site if isinstance(site, SiteCode) else SiteCode.parse(site)
-        wanted = tag if isinstance(tag, TrapTag) else TrapTag.parse(tag)
+        site_code = as_site(site)
+        wanted = as_tag(tag)
         row = self.book.one(
             "SELECT * FROM trap_station WHERE site_code = ? AND tag = ?",
             (site_code.value, str(wanted)),
@@ -118,8 +114,8 @@ class StationRepository:
             return None
 
     def delete(self, site: SiteCode | str, tag: TrapTag | str) -> bool:
-        site_code = site if isinstance(site, SiteCode) else SiteCode.parse(site)
-        wanted = tag if isinstance(tag, TrapTag) else TrapTag.parse(tag)
+        site_code = as_site(site)
+        wanted = as_tag(tag)
         before = self.book.scalar(
             "SELECT COUNT(*) FROM trap_station WHERE site_code = ? AND tag = ?",
             (site_code.value, str(wanted)),
@@ -134,7 +130,7 @@ class StationRepository:
     def load_register(self, site: SiteCode | str) -> TrapRegister:
         """Every station at a site, with its header, model and profile attached."""
 
-        site_code = site if isinstance(site, SiteCode) else SiteCode.parse(site)
+        site_code = as_site(site)
         headers = {h.key: h for h in self.plant.list_headers(site_code)}
         catalogue = self.catalogue.load_catalogue()
         profiles = {p.code: p for p in self.profiles.list_for(site_code)}
@@ -169,7 +165,7 @@ class StationRepository:
         return written
 
     def count(self, site: SiteCode | str) -> int:
-        site_code = site if isinstance(site, SiteCode) else SiteCode.parse(site)
+        site_code = as_site(site)
         return int(
             self.book.scalar(
                 "SELECT COUNT(*) FROM trap_station WHERE site_code = ?", (site_code.value,)
@@ -198,11 +194,11 @@ class StationRepository:
             ),
             criticality=enum_from_value(Criticality, str(row["criticality"]), field="criticality"),
             profile=profile,
-            installed_on=_date(row["installed_on"]),
+            installed_on=as_date(row["installed_on"]),
             destination=None
             if destination is None
             else enum_from_value(DischargeDestination, str(destination), field="destination"),
-            removed_on=None if removed is None else _date(removed),
+            removed_on=None if removed is None else as_date(removed),
             strainer_fitted=bool(row["strainer_fitted"]),
             isolation_valves=int(row["isolation_valves"]),
             test_valve_fitted=bool(row["test_valve_fitted"]),

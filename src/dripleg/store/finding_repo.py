@@ -24,18 +24,11 @@ from dripleg.repair.recommend import Action
 from dripleg.repair.workorder import WorkOrder, WorkOrderState
 from dripleg.store.codes import enum_from_value
 from dripleg.store.db import Database
+from dripleg.store.keys import as_date, as_site, as_tag, maybe_date
 from dripleg.survey.condition import TrapCondition
 from dripleg.units.money import Money
 
 __all__ = ["FindingRepository", "StoredFinding", "WorkOrderRepository"]
-
-
-def _site(site: SiteCode | str) -> SiteCode:
-    return site if isinstance(site, SiteCode) else SiteCode.parse(site)
-
-
-def _date(value: object) -> dt.date | None:
-    return None if value is None else dt.date.fromisoformat(str(value))
 
 
 @dataclass(frozen=True)
@@ -74,7 +67,7 @@ class FindingRepository:
         self.book = book
 
     def save_register(self, site: SiteCode | str, register: LossRegister) -> int:
-        site_code = _site(site)
+        site_code = as_site(site)
         with self.book.transaction():
             self.book.execute(
                 "DELETE FROM finding WHERE site_code = ? AND survey_reference = ?",
@@ -107,7 +100,7 @@ class FindingRepository:
     def for_survey(self, site: SiteCode | str, reference: str) -> list[StoredFinding]:
         rows = self.book.query(
             "SELECT * FROM finding WHERE site_code = ? AND survey_reference = ? ORDER BY tag",
-            (_site(site).value, reference.strip().upper()),
+            (as_site(site).value, reference.strip().upper()),
         )
         return [self._from(row) for row in rows]
 
@@ -115,17 +108,17 @@ class FindingRepository:
         rows = self.book.query(
             "SELECT * FROM finding WHERE site_code = ? AND annual_cost_cents > 0 "
             "ORDER BY annual_cost_cents DESC, tag LIMIT ?",
-            (_site(site).value, limit),
+            (as_site(site).value, limit),
         )
         return [self._from(row) for row in rows]
 
     def history_for(self, site: SiteCode | str, tag: TrapTag | str) -> list[StoredFinding]:
-        wanted = tag if isinstance(tag, TrapTag) else TrapTag.parse(tag)
+        wanted = as_tag(tag)
         rows = self.book.query(
             "SELECT f.* FROM finding f JOIN survey s "
             "ON s.site_code = f.site_code AND s.reference = f.survey_reference "
             "WHERE f.site_code = ? AND f.tag = ? ORDER BY s.started_on",
-            (_site(site).value, str(wanted)),
+            (as_site(site).value, str(wanted)),
         )
         return [self._from(row) for row in rows]
 
@@ -143,13 +136,13 @@ class FindingRepository:
             "SELECT f.tag, f.diagnosed, s.started_on FROM finding f JOIN survey s "
             "ON s.site_code = f.site_code AND s.reference = f.survey_reference "
             "WHERE f.site_code = ? ORDER BY s.started_on",
-            (_site(site).value,),
+            (as_site(site).value,),
         )
         latest: dict[TrapTag, tuple[dt.date, TrapCondition]] = {}
         for row in rows:
             tag = TrapTag.parse(str(row["tag"]))
             latest[tag] = (
-                dt.date.fromisoformat(str(row["started_on"])),
+                as_date(row["started_on"]),
                 enum_from_value(TrapCondition, str(row["diagnosed"]), field="diagnosed"),
             )
         return latest
@@ -163,12 +156,12 @@ class FindingRepository:
             "SELECT f.*, s.started_on FROM finding f JOIN survey s "
             "ON s.site_code = f.site_code AND s.reference = f.survey_reference "
             "WHERE f.site_code = ? ORDER BY s.started_on",
-            (_site(site).value,),
+            (as_site(site).value,),
         )
         latest: dict[TrapTag, tuple[dt.date, StoredFinding]] = {}
         for row in rows:
             finding = self._from(row)
-            latest[finding.tag] = (dt.date.fromisoformat(str(row["started_on"])), finding)
+            latest[finding.tag] = (as_date(row["started_on"]), finding)
         return latest
 
     def all_verdicts_per_trap(self, site: SiteCode | str) -> dict[TrapTag, list[TrapCondition]]:
@@ -178,7 +171,7 @@ class FindingRepository:
             "SELECT f.tag, f.diagnosed FROM finding f JOIN survey s "
             "ON s.site_code = f.site_code AND s.reference = f.survey_reference "
             "WHERE f.site_code = ? ORDER BY s.started_on",
-            (_site(site).value,),
+            (as_site(site).value,),
         )
         history: dict[TrapTag, list[TrapCondition]] = {}
         for row in rows:
@@ -192,7 +185,7 @@ class FindingRepository:
         cents = self.book.scalar(
             "SELECT COALESCE(SUM(annual_cost_cents), 0) FROM finding "
             "WHERE site_code = ? AND survey_reference = ?",
-            (_site(site).value, reference.strip().upper()),
+            (as_site(site).value, reference.strip().upper()),
         )
         return Money.from_cents(int(cents or 0))
 
@@ -223,7 +216,7 @@ class WorkOrderRepository:
         self.book = book
 
     def save(self, site: SiteCode | str, order: WorkOrder) -> None:
-        site_code = _site(site)
+        site_code = as_site(site)
         with self.book.transaction():
             self.book.execute(
                 "INSERT INTO work_order (number, site_code, tag, action, state, raised_on, "
@@ -269,14 +262,14 @@ class WorkOrderRepository:
             number=str(row["number"]),
             tag=TrapTag.parse(str(row["tag"])),
             action=enum_from_value(Action, str(row["action"]), field="action"),
-            raised_on=dt.date.fromisoformat(str(row["raised_on"])),
-            due_on=dt.date.fromisoformat(str(row["due_on"])),
+            raised_on=as_date(row["raised_on"]),
+            due_on=as_date(row["due_on"]),
             estimated_cost=Money.from_cents(int(row["estimated_cost_cents"])),
             state=enum_from_value(WorkOrderState, str(row["state"]), field="state"),
             assigned_to=None if row["assigned_to"] is None else str(row["assigned_to"]),
-            started_on=_date(row["started_on"]),
-            completed_on=_date(row["completed_on"]),
-            verified_on=_date(row["verified_on"]),
+            started_on=maybe_date(row["started_on"]),
+            completed_on=maybe_date(row["completed_on"]),
+            verified_on=maybe_date(row["verified_on"]),
             actual_cost=None
             if row["actual_cost_cents"] is None
             else Money.from_cents(int(row["actual_cost_cents"])),
@@ -287,7 +280,7 @@ class WorkOrderRepository:
         rows = self.book.query(
             "SELECT number FROM work_order WHERE site_code = ? "
             "AND state NOT IN ('verified', 'cancelled') ORDER BY due_on, number",
-            (_site(site).value,),
+            (as_site(site).value,),
         )
         return [self.get(str(row["number"])) for row in rows]
 
@@ -298,15 +291,15 @@ class WorkOrderRepository:
         return [order for order in self.open_orders(site) if order.awaiting_verification]
 
     def for_tag(self, site: SiteCode | str, tag: TrapTag | str) -> list[WorkOrder]:
-        wanted = tag if isinstance(tag, TrapTag) else TrapTag.parse(tag)
+        wanted = as_tag(tag)
         rows = self.book.query(
             "SELECT number FROM work_order WHERE site_code = ? AND tag = ? ORDER BY raised_on",
-            (_site(site).value, str(wanted)),
+            (as_site(site).value, str(wanted)),
         )
         return [self.get(str(row["number"])) for row in rows]
 
     def next_number(self, site: SiteCode | str, prefix: str = "WO") -> str:
         count = self.book.scalar(
-            "SELECT COUNT(*) FROM work_order WHERE site_code = ?", (_site(site).value,)
+            "SELECT COUNT(*) FROM work_order WHERE site_code = ?", (as_site(site).value,)
         )
         return f"{prefix.strip().upper()}-{int(count or 0) + 1:05d}"

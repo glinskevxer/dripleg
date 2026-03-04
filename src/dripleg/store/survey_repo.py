@@ -8,13 +8,13 @@ one transaction, and either the whole visit is there or the old one still is.
 
 from __future__ import annotations
 
-import datetime as dt
 import sqlite3
 
 from dripleg.errors import NotFoundError
 from dripleg.model.tags import SiteCode, TrapTag
 from dripleg.store.codes import enum_from_value
 from dripleg.store.db import Database
+from dripleg.store.keys import as_date, as_site, as_tag
 from dripleg.survey.condition import TrapCondition
 from dripleg.survey.observation import Observation
 from dripleg.survey.readings import (
@@ -29,14 +29,6 @@ from dripleg.units.pressure import Pressure
 from dripleg.units.temperature import Temperature
 
 __all__ = ["RouteRepository", "SurveyRepository"]
-
-
-def _site(site: SiteCode | str) -> SiteCode:
-    return site if isinstance(site, SiteCode) else SiteCode.parse(site)
-
-
-def _date(value: object) -> dt.date:
-    return dt.date.fromisoformat(str(value))
 
 
 class SurveyRepository:
@@ -103,7 +95,7 @@ class SurveyRepository:
         )
 
     def get(self, site: SiteCode | str, reference: str) -> Survey:
-        site_code = _site(site)
+        site_code = as_site(site)
         wanted = reference.strip().upper()
         row = self.book.one(
             "SELECT * FROM survey WHERE site_code = ? AND reference = ?",
@@ -117,7 +109,7 @@ class SurveyRepository:
             reference=str(row["reference"]),
             name=str(row["name"]),
             contractor=str(row["contractor"]),
-            started_on=_date(row["started_on"]),
+            started_on=as_date(row["started_on"]),
         )
         for line in self.book.query(
             "SELECT * FROM observation WHERE site_code = ? AND survey_reference = ? ORDER BY tag",
@@ -125,7 +117,7 @@ class SurveyRepository:
         ):
             survey.record(self._observation_from(line))
         if finished is not None:
-            survey.close(_date(finished))
+            survey.close(as_date(finished))
         return survey
 
     def find(self, site: SiteCode | str, reference: str) -> Survey | None:
@@ -137,17 +129,17 @@ class SurveyRepository:
     def list_references(self, site: SiteCode | str) -> list[str]:
         rows = self.book.query(
             "SELECT reference FROM survey WHERE site_code = ? ORDER BY started_on, reference",
-            (_site(site).value,),
+            (as_site(site).value,),
         )
         return [str(row["reference"]) for row in rows]
 
     def readings_for(self, site: SiteCode | str, tag: TrapTag | str) -> list[Observation]:
         """Every reading ever taken on one trap, oldest first."""
 
-        wanted = tag if isinstance(tag, TrapTag) else TrapTag.parse(tag)
+        wanted = as_tag(tag)
         rows = self.book.query(
             "SELECT * FROM observation WHERE site_code = ? AND tag = ? ORDER BY observed_on",
-            (_site(site).value, str(wanted)),
+            (as_site(site).value, str(wanted)),
         )
         return [self._observation_from(row) for row in rows]
 
@@ -178,7 +170,7 @@ class SurveyRepository:
         photo = row["photo_reference"]
         return Observation(
             tag=TrapTag.parse(str(row["tag"])),
-            observed_on=_date(row["observed_on"]),
+            observed_on=as_date(row["observed_on"]),
             technician=str(row["technician"]),
             reported_condition=enum_from_value(
                 TrapCondition, str(row["reported_condition"]), field="reported_condition"
@@ -229,7 +221,7 @@ class RouteRepository:
             )
 
     def get(self, site: SiteCode | str, code: str) -> Route:
-        site_code = _site(site)
+        site_code = as_site(site)
         wanted = code.strip().upper()
         row = self.book.one(
             "SELECT * FROM route WHERE site_code = ? AND code = ?", (site_code.value, wanted)
@@ -251,12 +243,12 @@ class RouteRepository:
 
     def list_for(self, site: SiteCode | str) -> list[Route]:
         rows = self.book.query(
-            "SELECT code FROM route WHERE site_code = ? ORDER BY code", (_site(site).value,)
+            "SELECT code FROM route WHERE site_code = ? ORDER BY code", (as_site(site).value,)
         )
         return [self.get(site, str(row["code"])) for row in rows]
 
     def delete(self, site: SiteCode | str, code: str) -> bool:
-        site_code = _site(site)
+        site_code = as_site(site)
         wanted = code.strip().upper()
         before = self.book.scalar(
             "SELECT COUNT(*) FROM route WHERE site_code = ? AND code = ?",

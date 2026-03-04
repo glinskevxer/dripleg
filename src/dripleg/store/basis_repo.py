@@ -23,6 +23,7 @@ from dripleg.loss.energy import EnergyModel
 from dripleg.model.tags import SiteCode
 from dripleg.repair.recommend import RepairBasis
 from dripleg.store.db import Database
+from dripleg.store.keys import as_site
 from dripleg.units.money import Money, Price
 from dripleg.units.temperature import Temperature
 
@@ -74,7 +75,7 @@ class BasisRepository:
         self.book = book
 
     def save(self, site: SiteCode | str, basis: SiteBasis) -> None:
-        site_code = site if isinstance(site, SiteCode) else SiteCode.parse(site)
+        site_code = as_site(site)
         with self.book.transaction():
             self.book.execute(
                 "INSERT INTO cost_basis (site_code, fuel_per_mmbtu, water_per_kgal, "
@@ -112,7 +113,7 @@ class BasisRepository:
             )
 
     def get(self, site: SiteCode | str) -> SiteBasis:
-        site_code = site if isinstance(site, SiteCode) else SiteCode.parse(site)
+        site_code = as_site(site)
         row = self.book.one("SELECT * FROM cost_basis WHERE site_code = ?", (site_code.value,))
         if row is None:
             raise NotFoundError("cost basis", site_code.value)
