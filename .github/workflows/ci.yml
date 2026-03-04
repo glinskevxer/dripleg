@@ -25,6 +25,7 @@ jobs:
       - run: python -m ruff format --check .
       - run: python -m mypy
       - run: python -m dripleg.tools.check_migrations
+      - run: python -m dripleg.tools.check_workflow
       - run: python -m dripleg.tools.schema_dump --check
       - run: python -m dripleg.tools.build_docs --check
 
