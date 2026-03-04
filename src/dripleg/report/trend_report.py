@@ -12,6 +12,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from dripleg.programme.trend import Trend
+from dripleg.report.base import Rendered
 from dripleg.report.table import Column, Table
 from dripleg.units.money import Money
 
@@ -19,7 +20,7 @@ __all__ = ["TrendReport", "build_trend_report"]
 
 
 @dataclass(frozen=True)
-class TrendReport:
+class TrendReport(Rendered):
     """A comparison of two surveys, ready to print."""
 
     earlier: str
@@ -94,9 +95,6 @@ class TrendReport:
         if self.only_earlier:
             out.extend(["", "read last time and not this: " + ", ".join(self.only_earlier)])
         return out
-
-    def render(self) -> str:
-        return "\n".join(self.lines())
 
     def as_dict(self) -> dict[str, object]:
         return {

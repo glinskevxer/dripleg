@@ -15,6 +15,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from dripleg.loss.register import LossRegister
+from dripleg.report.base import Rendered
 from dripleg.report.table import Column, Table
 from dripleg.units.money import Money
 
@@ -24,7 +25,7 @@ TOP_COUNT = 10
 
 
 @dataclass(frozen=True)
-class LossReport:
+class LossReport(Rendered):
     """A costed survey, ready to print."""
 
     reference: str
@@ -94,9 +95,6 @@ class LossReport:
         out.extend(["", "by condition", ""])
         out.extend(self.condition_table().lines())
         return out
-
-    def render(self) -> str:
-        return "\n".join(self.lines())
 
     def as_dict(self) -> dict[str, object]:
         return {

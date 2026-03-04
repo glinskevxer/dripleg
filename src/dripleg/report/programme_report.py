@@ -15,6 +15,7 @@ import datetime as dt
 from dataclasses import dataclass
 
 from dripleg.programme.schedule import Schedule
+from dripleg.report.base import Rendered
 from dripleg.report.table import Column, Table
 
 __all__ = ["ProgrammeReport", "build_programme_report"]
@@ -36,7 +37,7 @@ _MONTH_NAMES = (
 
 
 @dataclass(frozen=True)
-class ProgrammeReport:
+class ProgrammeReport(Rendered):
     """The survey programme, as of one day."""
 
     site: str
@@ -98,9 +99,6 @@ class ProgrammeReport:
         out.extend(["", f"what falls due in {self.on.year + 1}", ""])
         out.extend(self.workload_table().lines())
         return out
-
-    def render(self) -> str:
-        return "\n".join(self.lines())
 
     def as_dict(self) -> dict[str, object]:
         return {

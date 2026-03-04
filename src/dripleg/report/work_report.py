@@ -15,6 +15,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from dripleg.repair.priority import Priority, RankedJob, WorkList
+from dripleg.report.base import Rendered
 from dripleg.report.table import Column, Table
 from dripleg.units.money import Money
 
@@ -22,7 +23,7 @@ __all__ = ["WorkReport", "build_work_report"]
 
 
 @dataclass(frozen=True)
-class JobLine:
+class JobLine(Rendered):
     """One job as it appears on the list."""
 
     tag: str
@@ -60,7 +61,7 @@ class JobLine:
 
 
 @dataclass(frozen=True)
-class WorkReport:
+class WorkReport(Rendered):
     """A ranked work list, with or without a budget drawn across it."""
 
     site: str
@@ -152,9 +153,6 @@ class WorkReport:
         for line in self.outside:
             total = total + line.saving
         return total
-
-    def render(self) -> str:
-        return "\n".join(self.lines())
 
     def as_dict(self) -> dict[str, object]:
         return {

@@ -16,6 +16,7 @@ from dataclasses import dataclass
 
 from dripleg.diagnosis.batch import SurveyDiagnosis
 from dripleg.model.register import TrapRegister
+from dripleg.report.base import Rendered
 from dripleg.report.table import Column, Table
 from dripleg.survey.survey import Survey
 
@@ -23,7 +24,7 @@ __all__ = ["SurveyReport", "build_survey_report"]
 
 
 @dataclass(frozen=True)
-class SurveyReport:
+class SurveyReport(Rendered):
     """One survey, rendered."""
 
     reference: str
@@ -93,9 +94,6 @@ class SurveyReport:
             out.extend(["", "readings that could not be judged", ""])
             out.extend(f"  {tag}" for tag in self.skipped)
         return out
-
-    def render(self) -> str:
-        return "\n".join(self.lines())
 
     def as_dict(self) -> dict[str, object]:
         return {
