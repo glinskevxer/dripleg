@@ -20,6 +20,7 @@ from dripleg.errors import ValidationError
 from dripleg.model.plant import Area
 from dripleg.model.tags import AreaCode, SiteCode, SystemCode
 from dripleg.steam.saturated import at_pressure
+from dripleg.thresholds import CRITICAL_BACK_PRESSURE_RATIO
 from dripleg.units.pressure import Pressure
 from dripleg.units.temperature import Temperature
 
@@ -175,7 +176,7 @@ class SteamHeader:
         pressure at all, which is what makes Napier usable in the field.
         """
 
-        return self.back_pressure_ratio <= 0.577
+        return self.back_pressure_ratio <= CRITICAL_BACK_PRESSURE_RATIO
 
     @property
     def key(self) -> tuple[str, str, str]:

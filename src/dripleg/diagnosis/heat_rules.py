@@ -23,6 +23,12 @@ from dripleg.diagnosis.rules import Rule
 from dripleg.steam.saturated import at_pressure
 from dripleg.survey.condition import TrapCondition
 from dripleg.survey.readings import SurveyMethod
+from dripleg.thresholds import (
+    AMBIENT_MARGIN_F,
+    COLD_INLET_F,
+    OUTLET_MARGIN_F,
+    SUBCOOLED_FLOOR_F,
+)
 from dripleg.units.temperature import Temperature
 
 __all__ = [
@@ -34,17 +40,6 @@ __all__ = [
     "WholeTrapCold",
     "expected_outlet",
 ]
-
-# A surface reading runs under the steam inside the pipe. Anything within this
-# of the discharge line's saturation temperature is steam as far as a contact
-# probe can tell.
-_OUTLET_MARGIN_F = 12.0
-
-# Below saturation by this much and the trap is not passing anything.
-_COLD_INLET_F = 100.0
-
-# Within this of the air and the line is not live at all.
-_AMBIENT_MARGIN_F = 35.0
 
 
 def expected_outlet(context: DiagnosisContext) -> Temperature:
@@ -68,10 +63,10 @@ class HotOutlet(_HeatRule):
         heat = context.heat
         assert heat is not None
         outlet_saturation = expected_outlet(context)
-        if heat.downstream.fahrenheit < outlet_saturation.fahrenheit - _OUTLET_MARGIN_F:
+        if heat.downstream.fahrenheit < outlet_saturation.fahrenheit - OUTLET_MARGIN_F:
             return []
         subcooling = context.subcooling
-        if subcooling is not None and subcooling.fahrenheit > _COLD_INLET_F:
+        if subcooling is not None and subcooling.fahrenheit > COLD_INLET_F:
             return []
         return [
             Evidence(
@@ -96,7 +91,7 @@ class ColdInlet(_HeatRule):
         subcooling = context.subcooling
         assert heat is not None
         assert subcooling is not None
-        if subcooling.fahrenheit <= _COLD_INLET_F:
+        if subcooling.fahrenheit <= COLD_INLET_F:
             return []
         # A thermostatic trap is supposed to back condensate up, so a cold
         # inlet on one of those is weaker evidence than on a disc.
@@ -126,7 +121,7 @@ class WholeTrapCold(_HeatRule):
         assert heat is not None
         assert heat.ambient is not None
         rise = heat.upstream.fahrenheit - heat.ambient.fahrenheit
-        if rise > _AMBIENT_MARGIN_F:
+        if rise > AMBIENT_MARGIN_F:
             return []
         return [
             Evidence(
@@ -149,7 +144,7 @@ class ExcessSubcooling(_HeatRule):
         assert heat is not None
         assert subcooling is not None
         degrees = subcooling.fahrenheit
-        if degrees > _COLD_INLET_F or degrees <= 0:
+        if degrees > COLD_INLET_F or degrees <= SUBCOOLED_FLOOR_F:
             return []
         if context.principle.subcooling_is_normal(degrees):
             return []
@@ -178,9 +173,7 @@ class HealthyDrop(_HeatRule):
         assert heat is not None
         assert subcooling is not None
         outlet_saturation = expected_outlet(context)
-        outlet_is_cool = (
-            heat.downstream.fahrenheit < outlet_saturation.fahrenheit - _OUTLET_MARGIN_F
-        )
+        outlet_is_cool = heat.downstream.fahrenheit < outlet_saturation.fahrenheit - OUTLET_MARGIN_F
         inlet_is_hot = context.principle.subcooling_is_normal(max(subcooling.fahrenheit, 0.0))
         if not (outlet_is_cool and inlet_is_hot):
             return []

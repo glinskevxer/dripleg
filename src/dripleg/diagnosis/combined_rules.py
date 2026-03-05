@@ -22,6 +22,7 @@ from dripleg.diagnosis.rules import Rule
 from dripleg.diagnosis.sound_rules import sound_bands
 from dripleg.survey.condition import TrapCondition
 from dripleg.survey.readings import SightGlassView, SurveyMethod
+from dripleg.thresholds import COLD_INLET_F, OUTLET_MARGIN_F
 
 __all__ = [
     "COMBINED_RULES",
@@ -33,9 +34,6 @@ __all__ = [
     "QuietAndCold",
     "SoundAndHeatAgree",
 ]
-
-_OUTLET_MARGIN_F = 12.0
-_COLD_INLET_F = 100.0
 
 
 class _GlassRule(Rule):
@@ -136,7 +134,7 @@ class SoundAndHeatAgree(_PairRule):
         assert heat is not None
         _, _, blow = sound_bands(context)
         outlet_saturation = expected_outlet(context)
-        outlet_hot = heat.downstream.fahrenheit >= outlet_saturation.fahrenheit - _OUTLET_MARGIN_F
+        outlet_hot = heat.downstream.fahrenheit >= outlet_saturation.fahrenheit - OUTLET_MARGIN_F
         if sound.decibels < blow or not outlet_hot:
             return []
         if sound.counted_cycles and not sound.sounded_continuous:
@@ -167,7 +165,7 @@ class LoudAndCold(_PairRule):
         _, leak, _ = sound_bands(context)
         if sound.decibels < leak:
             return []
-        if subcooling.fahrenheit <= _COLD_INLET_F:
+        if subcooling.fahrenheit <= COLD_INLET_F:
             return []
         return [
             Evidence(
@@ -193,7 +191,7 @@ class QuietAndCold(_PairRule):
         assert sound is not None
         assert subcooling is not None
         quiet, _, _ = sound_bands(context)
-        if sound.decibels > quiet or subcooling.fahrenheit <= _COLD_INLET_F:
+        if sound.decibels > quiet or subcooling.fahrenheit <= COLD_INLET_F:
             return []
         return [
             Evidence(

@@ -28,6 +28,7 @@ from __future__ import annotations
 import math
 
 from dripleg.errors import ValidationError
+from dripleg.thresholds import CRITICAL_BACK_PRESSURE_RATIO
 from dripleg.units.flow import MassFlow
 from dripleg.units.pressure import Pressure
 
@@ -44,8 +45,8 @@ __all__ = [
 NAPIER_CONSTANT = 51.43
 """Pounds an hour per square inch of orifice per psia, saturated steam."""
 
-CRITICAL_PRESSURE_RATIO = 0.577
-"""Downstream over upstream absolute, below which the seat is choked."""
+CRITICAL_PRESSURE_RATIO = CRITICAL_BACK_PRESSURE_RATIO
+"""Kept under this name because the loss code reads better with it."""
 
 SHARP_ORIFICE_CD = 0.61
 """A drilled, square edged hole: a fixed orifice trap or a new seat."""

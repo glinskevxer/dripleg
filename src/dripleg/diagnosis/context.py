@@ -22,6 +22,10 @@ from dripleg.model.principles import PrincipleProfile
 from dripleg.steam.saturated import at_pressure
 from dripleg.survey.observation import Observation
 from dripleg.survey.readings import TemperatureReading, UltrasonicReading
+from dripleg.thresholds import (
+    CRITICAL_BACK_PRESSURE_RATIO,
+    PRESSURE_DISAGREEMENT,
+)
 from dripleg.units.pressure import Pressure
 from dripleg.units.temperature import Temperature, TemperatureDelta
 
@@ -75,7 +79,7 @@ class DiagnosisContext:
 
     @property
     def is_choked(self) -> bool:
-        return self.back_pressure_ratio <= 0.577
+        return self.back_pressure_ratio <= CRITICAL_BACK_PRESSURE_RATIO
 
     @property
     def sound(self) -> UltrasonicReading | None:
@@ -143,7 +147,7 @@ class DiagnosisContext:
         register = self.station.header.operating_pressure.psia
         if register <= 0:
             return False
-        return abs(self.pressure.psia - register) / register > 0.20
+        return abs(self.pressure.psia - register) / register > PRESSURE_DISAGREEMENT
 
     def __str__(self) -> str:
         return f"{self.station.tag} on {self.observed_on} at {self.pressure}"
