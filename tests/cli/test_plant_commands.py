@@ -43,11 +43,18 @@ def test_a_site_can_be_updated(book: str) -> None:
     assert payload[0]["start_month"] == "4"
 
 
-def test_an_area_needs_a_site_on_the_command_line(book: str) -> None:
+def test_an_area_needs_a_site_once_there_are_two(book: str) -> None:
     run(book, "site", "add", "WRX1", "Mill", "--operator", "Bryn")
+    run(book, "site", "add", "WRX2", "Second mill", "--operator", "Bryn")
     without = run(book, "area", "add", "B12", "Machine", "--cost-centre", "PM2")
     assert without.exit_code != 0
     assert "--site" in str(without.exception)
+
+
+def test_an_area_needs_no_site_when_there_is_only_one(book: str) -> None:
+    run(book, "site", "add", "WRX1", "Mill", "--operator", "Bryn")
+    added = run(book, "area", "add", "B12", "Machine", "--cost-centre", "PM2")
+    assert added.exit_code == 0
 
 
 def test_an_area_is_added_and_listed(book: str) -> None:

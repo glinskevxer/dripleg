@@ -52,9 +52,28 @@ class Context:
         return schema_version(self.book)
 
     def site(self) -> str:
-        if self.site_code is None:
-            raise ConfigError("say which site with --site")
-        return self.site_code
+        """The site to work on, falling back to the only one in the book.
+
+        Almost every book holds one plant, and making every command on those
+        books carry `--site` is friction for nothing. Two or more and it has to
+        be said, because guessing there would silently work on the wrong plant.
+        """
+
+        if self.site_code is not None:
+            return self.site_code
+        found = self.site_codes()
+        if len(found) == 1:
+            return found[0]
+        if not found:
+            raise ConfigError("this book has no sites on it yet, add one first")
+        raise ConfigError("say which site with --site, this book holds " + ", ".join(found))
+
+    def site_codes(self) -> list[str]:
+        """Every site on the book, in code order."""
+
+        if not self.book.has_table("site"):
+            return []
+        return [str(row["code"]) for row in self.book.query("SELECT code FROM site ORDER BY code")]
 
     def close(self) -> None:
         if self._book is not None:

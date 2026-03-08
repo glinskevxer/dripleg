@@ -44,16 +44,67 @@ def test_an_in_memory_book_needs_no_file() -> None:
     context.close()
 
 
-def test_asking_for_the_site_without_one() -> None:
+def test_asking_for_the_site_on_a_book_with_no_schema() -> None:
     context = Context(book_path=IN_MEMORY)
-    with pytest.raises(ConfigError, match="--site"):
+    with pytest.raises(ConfigError, match="no sites on it yet"):
         context.site()
     context.site_code = "WRX1"
     assert context.site() == "WRX1"
+    context.close()
 
 
 def test_closing_twice_is_fine() -> None:
     context = Context(book_path=IN_MEMORY)
     context.create_book()
     context.close()
+    context.close()
+
+
+def _book_with(tmp_path: Path, codes: list[str]) -> Context:
+    context = Context(book_path=str(tmp_path / "wrx1.sqlite3"))
+    context.create_book()
+    for code in codes:
+        context.book.execute(
+            "INSERT INTO site (code, name, operator, fuel_price_basis) VALUES (?, ?, ?, ?)",
+            (code, f"Plant {code}", "Bryn", "gas"),
+        )
+    return context
+
+
+def test_one_site_on_the_book_needs_no_option(tmp_path: Path) -> None:
+    context = _book_with(tmp_path, ["WRX1"])
+    assert context.site() == "WRX1"
+    context.close()
+
+
+def test_two_sites_on_the_book_have_to_be_told_apart(tmp_path: Path) -> None:
+    context = _book_with(tmp_path, ["WRX1", "WRX2"])
+    with pytest.raises(ConfigError, match="this book holds WRX1, WRX2"):
+        context.site()
+    context.close()
+
+
+def test_an_option_beats_the_fallback(tmp_path: Path) -> None:
+    context = _book_with(tmp_path, ["WRX1", "WRX2"])
+    context.site_code = "WRX2"
+    assert context.site() == "WRX2"
+    context.close()
+
+
+def test_an_empty_book_says_to_add_a_site(tmp_path: Path) -> None:
+    context = _book_with(tmp_path, [])
+    with pytest.raises(ConfigError, match="no sites on it yet"):
+        context.site()
+    context.close()
+
+
+def test_the_site_codes_come_back_in_order(tmp_path: Path) -> None:
+    context = _book_with(tmp_path, ["WRX2", "WRX1"])
+    assert context.site_codes() == ["WRX1", "WRX2"]
+    context.close()
+
+
+def test_a_book_with_no_schema_lists_no_sites() -> None:
+    context = Context(book_path=IN_MEMORY)
+    assert context.site_codes() == []
     context.close()
