@@ -2,7 +2,7 @@
 
 # Commands
 
-59 commands.
+61 commands.
 
 ## `dripleg about`
 
@@ -204,6 +204,10 @@ Add an empty route, or update the timings on one.
 | `--minutes-per-stop` | How long one trap takes. | 6.0 |
 | `--walk-minutes` | Getting there and back. | 30.0 |
 
+## `dripleg route arrange`
+
+Stations a technician cannot simply walk up to.
+
 ## `dripleg route coverage`
 
 Traps on the register that no route visits.
@@ -211,6 +215,18 @@ Traps on the register that no route visits.
 ## `dripleg route list`
 
 Every route at a site.
+
+## `dripleg route plan`
+
+Cut a first set of routes out of the register, area by area.
+
+| option | help | default |
+| --- | --- | --- |
+| `--shift-hours` | How long a technician's day is. | 7.0 |
+| `--minutes-per-stop` | How long one trap takes. | 6.0 |
+| `--walk-minutes` | Getting to the area and back. | 30.0 |
+| `--prefix` | Route code prefix. | R |
+| `--save` | Write the routes to the book. |  |
 
 ## `dripleg route show`
 

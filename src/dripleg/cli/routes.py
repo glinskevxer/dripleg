@@ -9,6 +9,7 @@ from dripleg.cli.loading import register_for
 from dripleg.cli.output import emit_facts, emit_rows
 from dripleg.report.table import Column
 from dripleg.store.survey_repo import RouteRepository
+from dripleg.survey.planner import permit_stations, plan_routes
 from dripleg.survey.route import Route, unrouted_tags
 
 __all__ = ["route_group"]
@@ -129,6 +130,98 @@ def route_coverage(context: Context) -> None:
         [(str(s.tag), s.service.label, s.criticality.value) for s in missed],
         keys=["tag", "service", "criticality"],
         empty="every trap is on a route",
+    )
+
+
+@route_group.command("plan")
+@click.option(
+    "--shift-hours",
+    default=7.0,
+    show_default=True,
+    type=float,
+    help="How long a technician's day is.",
+)
+@click.option(
+    "--minutes-per-stop",
+    default=6.0,
+    show_default=True,
+    type=float,
+    help="How long one trap takes.",
+)
+@click.option(
+    "--walk-minutes",
+    default=30.0,
+    show_default=True,
+    type=float,
+    help="Getting to the area and back.",
+)
+@click.option("--prefix", default="R", show_default=True, help="Route code prefix.")
+@click.option("--save", is_flag=True, help="Write the routes to the book.")
+@click.pass_obj
+def route_plan(
+    context: Context,
+    shift_hours: float,
+    minutes_per_stop: float,
+    walk_minutes: float,
+    prefix: str,
+    save: bool,
+) -> None:
+    """Cut a first set of routes out of the register, area by area."""
+
+    plan = plan_routes(
+        register_for(context),
+        context.site(),
+        shift_hours=shift_hours,
+        minutes_per_stop=minutes_per_stop,
+        walk_minutes=walk_minutes,
+        prefix=prefix,
+    )
+    if save:
+        repo = RouteRepository(context.book)
+        with context.book.transaction():
+            for route in plan.routes:
+                repo.save(route)
+    emit_rows(
+        context,
+        [
+            Column("code"),
+            Column("name"),
+            Column.number("stops"),
+            Column.number("hours"),
+            Column("from"),
+            Column("to"),
+        ],
+        [
+            (
+                route.code,
+                route.name,
+                len(route),
+                f"{route.estimated_hours:.1f}",
+                str(route.stops[0]) if route.stops else "",
+                str(route.stops[-1]) if route.stops else "",
+            )
+            for route in plan.routes
+        ],
+        keys=["code", "name", "stops", "hours", "from", "to"],
+        empty="there is nothing to route",
+    )
+
+
+@route_group.command("arrange")
+@click.pass_obj
+def route_arrange(context: Context) -> None:
+    """Stations a technician cannot simply walk up to."""
+
+    grouped = permit_stations(register_for(context))
+    emit_rows(
+        context,
+        [Column("access"), Column.number("traps"), Column("tags", max_width=60)],
+        [
+            (access.value, len(tags), ", ".join(str(tag) for tag in tags))
+            for access, tags in grouped.items()
+        ],
+        keys=["access", "traps", "tags"],
+        empty="every trap can be walked up to",
     )
 
 
