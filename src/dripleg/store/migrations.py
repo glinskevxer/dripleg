@@ -355,6 +355,29 @@ MIGRATION_007 = Migration(
     """,
 )
 
+MIGRATION_008 = Migration(
+    8,
+    "findings the plant has decided to live with",
+    """
+    CREATE TABLE accepted_risk (
+        site_code    TEXT NOT NULL,
+        tag          TEXT NOT NULL,
+        reason       TEXT NOT NULL,
+        accepted_by  TEXT NOT NULL,
+        accepted_on  TEXT NOT NULL,
+        review_on    TEXT NOT NULL,
+        PRIMARY KEY (site_code, tag),
+        FOREIGN KEY (site_code, tag)
+            REFERENCES trap_station(site_code, tag) ON DELETE CASCADE,
+        CHECK (review_on > accepted_on),
+        CHECK (length(trim(reason)) > 0),
+        CHECK (length(trim(accepted_by)) > 0)
+    );
+
+    CREATE INDEX accepted_risk_by_review ON accepted_risk (site_code, review_on);
+    """,
+)
+
 MIGRATIONS: tuple[Migration, ...] = (
     MIGRATION_001,
     MIGRATION_002,
@@ -363,6 +386,7 @@ MIGRATIONS: tuple[Migration, ...] = (
     MIGRATION_005,
     MIGRATION_006,
     MIGRATION_007,
+    MIGRATION_008,
 )
 
 

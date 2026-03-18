@@ -2,7 +2,22 @@
 
 # Schema
 
-7 migrations, 16 tables.
+8 migrations, 17 tables.
+
+## accepted_risk
+
+| column | type | required |
+| --- | --- | --- |
+| site_code | TEXT | yes |
+| tag | TEXT | yes |
+| reason | TEXT | yes |
+| accepted_by | TEXT | yes |
+| accepted_on | TEXT | yes |
+| review_on | TEXT | yes |
+
+Indexes: accepted_risk_by_review.
+
+3 check constraints.
 
 ## area
 
