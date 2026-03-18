@@ -8,6 +8,8 @@ command modules import a public name.
 
 from __future__ import annotations
 
+import datetime as dt
+
 from dripleg.cli.context import Context
 from dripleg.diagnosis.batch import SurveyDiagnosis, diagnose_survey
 from dripleg.diagnosis.engine import DiagnosisEngine
@@ -17,6 +19,7 @@ from dripleg.repair.priority import WorkList, rank_jobs
 from dripleg.repair.recommend import recommend
 from dripleg.store.basis_repo import BasisRepository, SiteBasis
 from dripleg.store.catalogue_repo import CatalogueRepository
+from dripleg.store.risk_repo import RiskRepository
 from dripleg.store.rules_repo import RulesRepository
 from dripleg.store.station_repo import StationRepository
 from dripleg.store.survey_repo import SurveyRepository
@@ -68,10 +71,25 @@ def loss_register_for(context: Context, reference: str) -> LossRegister:
     )
 
 
-def work_list_for(context: Context, reference: str) -> WorkList:
+def work_list_for(context: Context, reference: str, *, as_at: dt.date | None = None) -> WorkList:
+    """The ranked list, with anything the plant has accepted taken off it.
+
+    An acceptance only ever removes a job from the list. The loss register
+    still carries the trap and still counts what it costs, because deciding not
+    to fix something does not stop it losing steam.
+    """
+
     losses = loss_register_for(context, reference)
     basis = basis_for(context)
     catalogue = CatalogueRepository(context.book).load_catalogue()
+    day = as_at if as_at is not None else dt.date.today()
+    accepted = RiskRepository(context.book).live_on(context.site(), day)
     return WorkList(
-        rank_jobs([(row, recommend(row, basis.repairs, catalogue)) for row in losses.rows])
+        rank_jobs(
+            [
+                (row, recommend(row, basis.repairs, catalogue))
+                for row in losses.rows
+                if row.tag not in accepted
+            ]
+        )
     )

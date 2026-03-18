@@ -2,7 +2,7 @@
 
 # Commands
 
-61 commands.
+64 commands.
 
 ## `dripleg about`
 
@@ -192,6 +192,35 @@ Stations that keep failing whatever is fitted to them.
 | option | help | default |
 | --- | --- | --- |
 | `--at-least` | Failures to qualify. | 2 |
+
+## `dripleg risk accept`
+
+Take a trap off the work list until a review date.
+
+| option | help | default |
+| --- | --- | --- |
+| `tag` | positional |  |
+| `--reason` | Why this one is not being fixed. |  |
+| `--by` | Who made the decision. |  |
+| `--on` | The day the decision was made. |  |
+| `--months` | How long before it comes back on the list. | 12 |
+
+## `dripleg risk list`
+
+Every acceptance, soonest review first.
+
+| option | help | default |
+| --- | --- | --- |
+| `--on` | The day to judge the review dates against. |  |
+| `--due-only` | Only the ones past their review date. |  |
+
+## `dripleg risk withdraw`
+
+Put a trap back on the work list before its review date.
+
+| option | help | default |
+| --- | --- | --- |
+| `tag` | positional |  |
 
 ## `dripleg route add`
 
