@@ -298,6 +298,16 @@ class WorkOrderRepository:
         )
         return [self.get(str(row["number"])) for row in rows]
 
+    def count_by_state(self, site: SiteCode | str) -> dict[str, int]:
+        """How many orders sit in each state, for the scorecard."""
+
+        rows = self.book.query(
+            "SELECT state, COUNT(*) AS n FROM work_order WHERE site_code = ? "
+            "GROUP BY state ORDER BY state",
+            (as_site(site).value,),
+        )
+        return {str(row["state"]): int(row["n"]) for row in rows}
+
     def next_number(self, site: SiteCode | str, prefix: str = "WO") -> str:
         count = self.book.scalar(
             "SELECT COUNT(*) FROM work_order WHERE site_code = ?", (as_site(site).value,)

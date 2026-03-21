@@ -7,15 +7,19 @@ import datetime as dt
 import click
 
 from dripleg.cli.context import Context
-from dripleg.cli.loading import register_for
+from dripleg.cli.loading import diagnosis_for, loss_register_for, register_for
 from dripleg.cli.output import emit_lines, emit_rows
+from dripleg.loss.accrual import accrue_all
 from dripleg.programme.reliability import build_reliability
 from dripleg.programme.schedule import build_schedule
 from dripleg.programme.trend import compare_surveys
 from dripleg.report.programme_report import build_programme_report
+from dripleg.report.scorecard import build_scorecard
 from dripleg.report.table import Column
 from dripleg.report.trend_report import build_trend_report
-from dripleg.store.finding_repo import FindingRepository
+from dripleg.store.finding_repo import FindingRepository, WorkOrderRepository
+from dripleg.store.survey_repo import SurveyRepository
+from dripleg.units.money import Money
 
 __all__ = ["programme_group"]
 
@@ -84,6 +88,52 @@ def programme_compare(context: Context, earlier: str, later: str) -> None:
     )
     report = build_trend_report(trend)
     emit_lines(context, report.lines(), report.as_dict())
+
+
+@programme_group.command("scorecard")
+@click.argument("reference")
+@click.option("--on", default=None, help="The day to work the programme out as at.")
+@click.pass_obj
+def programme_scorecard(context: Context, reference: str, on: str | None) -> None:
+    """The whole programme on one page."""
+
+    day = _day(on)
+    register = register_for(context)
+    survey = SurveyRepository(context.book).get(context.site(), reference)
+    diagnosis = diagnosis_for(context, reference)
+    losses = loss_register_for(context, reference)
+    findings = FindingRepository(context.book)
+    schedule = build_schedule(register, findings.last_verdict_per_trap(context.site()), on=day)
+    orders = WorkOrderRepository(context.book)
+    states = orders.count_by_state(context.site())
+    raised = sum(states.values())
+    verified = states.get("verified", 0)
+    entries = []
+    latest = findings.latest_finding_per_trap(context.site())
+    for order in orders.open_orders(context.site()):
+        station = register.find(order.tag)
+        found = latest.get(order.tag)
+        if station is None or found is None:
+            continue
+        surveyed_on, finding = found
+        entries.append((station, surveyed_on, finding.annual_cost, finding.pounds_per_hour))
+    backlog = Money.zero()
+    for accrual in accrue_all(entries, as_at=day):
+        backlog = backlog + accrual.cost
+    card = build_scorecard(
+        context.site(),
+        day.isoformat(),
+        reference,
+        coverage=survey.coverage(register).assessed_fraction,
+        failure_rate=diagnosis.failure_rate,
+        annual_cost=losses.total_cost,
+        jobs_raised=raised,
+        jobs_verified=verified,
+        backlog_cost=backlog,
+        programme_compliance=schedule.compliance_on(day),
+        never_surveyed=len(schedule.never_surveyed()),
+    )
+    emit_lines(context, card.lines(), card.as_dict())
 
 
 @programme_group.command("reliability")

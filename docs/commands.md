@@ -2,7 +2,7 @@
 
 # Commands
 
-64 commands.
+65 commands.
 
 ## `dripleg about`
 
@@ -192,6 +192,15 @@ Stations that keep failing whatever is fitted to them.
 | option | help | default |
 | --- | --- | --- |
 | `--at-least` | Failures to qualify. | 2 |
+
+## `dripleg programme scorecard`
+
+The whole programme on one page.
+
+| option | help | default |
+| --- | --- | --- |
+| `reference` | positional |  |
+| `--on` | The day to work the programme out as at. |  |
 
 ## `dripleg risk accept`
 
