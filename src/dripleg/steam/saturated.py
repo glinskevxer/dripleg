@@ -26,14 +26,20 @@ from dripleg.units.energy import SpecificEnthalpy
 from dripleg.units.pressure import Pressure
 from dripleg.units.temperature import Temperature
 
+SUPERHEAT_MARGIN_F = 10.0
+"""How far off saturation a reading has to be before it is called anything."""
+
 __all__ = [
     "FlashResult",
+    "SUPERHEAT_MARGIN_F",
+    "SuperheatResult",
     "at_pressure",
     "at_temperature",
     "flash_at",
     "latent_heat_at",
     "saturation_pressure_at",
     "saturation_temperature_at",
+    "superheat_at",
 ]
 
 
@@ -130,6 +136,56 @@ class FlashResult:
         return SpecificEnthalpy.from_btu_per_pound(
             self.flash_fraction * self.downstream.latent_heat.btu_per_pound
         )
+
+
+@dataclass(frozen=True)
+class SuperheatResult:
+    """How far a reading sits off the saturation line, and which side."""
+
+    pressure: Pressure
+    temperature: Temperature
+    saturation: Temperature
+
+    @property
+    def degrees(self) -> float:
+        """Positive above saturation, negative below it."""
+
+        return self.temperature.fahrenheit - self.saturation.fahrenheit
+
+    @property
+    def is_superheated(self) -> bool:
+        return self.degrees > SUPERHEAT_MARGIN_F
+
+    @property
+    def is_subcooled(self) -> bool:
+        return self.degrees < -SUPERHEAT_MARGIN_F
+
+    @property
+    def is_saturated(self) -> bool:
+        return not self.is_superheated and not self.is_subcooled
+
+    def __str__(self) -> str:
+        if self.is_superheated:
+            return f"{self.degrees:.0f} F of superheat at {self.pressure}"
+        if self.is_subcooled:
+            return f"{-self.degrees:.0f} F under saturation at {self.pressure}"
+        return f"at saturation at {self.pressure}"
+
+
+def superheat_at(pressure: Pressure, temperature: Temperature) -> SuperheatResult:
+    """Hold a pipe reading against the saturation line for its pressure.
+
+    A drip leg on a saturated main reads at saturation. A reading well above it
+    is superheat, which means the trap is on a line that is not making
+    condensate at all, and every subcooling rule in the diagnosis engine has
+    nothing useful to say about it.
+    """
+
+    return SuperheatResult(
+        pressure=pressure,
+        temperature=temperature,
+        saturation=at_pressure(pressure).temperature,
+    )
 
 
 def flash_at(upstream: Pressure, downstream: Pressure) -> FlashResult:

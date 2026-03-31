@@ -104,14 +104,14 @@ def test_bracketing_between_rows() -> None:
 def test_bracketing_the_last_row() -> None:
     low, high = row_bracketing_pressure(TABLE_MAX_PSIA)
     assert low is high
-    assert low.pressure.psia == pytest.approx(1000.0)
+    assert low.pressure.psia == pytest.approx(2000.0)
 
 
 def test_off_the_end_of_the_table_raises_rather_than_guessing() -> None:
     with pytest.raises(OutOfRangeError) as caught:
-        row_bracketing_pressure(1200.0)
+        row_bracketing_pressure(2500.0)
     assert caught.value.high == pytest.approx(TABLE_MAX_PSIA)
-    assert caught.value.value == pytest.approx(1200.0)
+    assert caught.value.value == pytest.approx(2500.0)
     with pytest.raises(OutOfRangeError):
         row_bracketing_pressure(0.1)
 
@@ -126,12 +126,36 @@ def test_bracketing_by_temperature_walks_the_other_column() -> None:
 
 def test_temperature_bracketing_has_its_own_range_guard() -> None:
     with pytest.raises(OutOfRangeError, match="outside the table"):
-        row_bracketing_temperature(600.0)
+        row_bracketing_temperature(700.0)
     with pytest.raises(OutOfRangeError):
         row_bracketing_temperature(60.0)
 
 
 def test_the_top_of_the_temperature_column_brackets_to_itself() -> None:
-    low, high = row_bracketing_temperature(544.61)
+    low, high = row_bracketing_temperature(635.80)
     assert low is high
-    assert low.pressure.psia == pytest.approx(1000.0)
+    assert low.pressure.psia == pytest.approx(2000.0)
+
+
+def test_the_table_reaches_the_pressure_a_boiler_drum_runs_at() -> None:
+    assert TABLE_MAX_PSIA >= 2000.0
+    top = SATURATION_TABLE[-1]
+    assert top.temperature.fahrenheit == pytest.approx(635.8, abs=0.1)
+    assert top.latent_heat.btu_per_pound < 500.0
+
+
+def test_vapour_enthalpy_peaks_and_then_falls() -> None:
+    enthalpies = [p.vapour_enthalpy.btu_per_pound for p in SATURATION_TABLE]
+    peak = max(enthalpies)
+    assert enthalpies[-1] < peak
+    assert enthalpies[0] < peak
+    at_peak = SATURATION_TABLE[enthalpies.index(peak)]
+    assert 400.0 < at_peak.pressure.psia < 700.0
+
+
+def test_the_high_pressure_rows_still_add_up() -> None:
+    for point in SATURATION_TABLE:
+        if point.pressure.psia < 1000.0:
+            continue
+        total = point.liquid_enthalpy.btu_per_pound + point.latent_heat.btu_per_pound
+        assert total == pytest.approx(point.vapour_enthalpy.btu_per_pound, abs=0.06)

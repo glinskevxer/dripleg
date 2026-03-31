@@ -10,6 +10,12 @@ argued over by people holding a printed steam table, and a number that does not
 match the book they are holding costs more credibility than the third decimal
 place is worth. Everything between rows is interpolated, and everything outside
 the ends raises rather than extrapolating.
+
+It runs to 2000 psia, which covers the boiler drum on the largest plant this
+has been used at. Note that vapour enthalpy is not monotonic across that range:
+it peaks near 500 psia and falls away as the critical point approaches, so a
+report that assumes higher pressure means more heat per pound is wrong above
+that and wrong in the direction that flatters the loss.
 """
 
 from __future__ import annotations
@@ -105,6 +111,12 @@ _ROWS: tuple[tuple[float, float, float, float, float, float], ...] = (
     (800.0, 518.23, 509.70, 688.9, 1198.6, 0.5691),
     (900.0, 531.98, 526.60, 668.2, 1194.8, 0.5009),
     (1000.0, 544.61, 542.40, 648.2, 1190.6, 0.4456),
+    (1100.0, 556.28, 557.40, 628.2, 1185.6, 0.4001),
+    (1200.0, 567.19, 571.70, 608.4, 1180.1, 0.3619),
+    (1400.0, 587.07, 598.70, 568.4, 1167.1, 0.3018),
+    (1600.0, 604.87, 623.50, 528.3, 1151.8, 0.2555),
+    (1800.0, 621.02, 646.70, 487.8, 1134.5, 0.2185),
+    (2000.0, 635.80, 671.70, 442.6, 1114.3, 0.1878),
 )
 
 

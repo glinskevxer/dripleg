@@ -63,7 +63,7 @@ def test_log_interpolation_beats_straight_line_between_wide_rows() -> None:
 
 def test_off_the_table_still_raises() -> None:
     with pytest.raises(OutOfRangeError):
-        at_pressure(Pressure.from_psia(2000.0))
+        at_pressure(Pressure.from_psia(2500.0))
 
 
 def test_the_inverse_lookup_finds_the_pressure() -> None:
@@ -125,3 +125,50 @@ def test_flash_result_keeps_both_ends() -> None:
 def test_condensate_does_not_flash_uphill() -> None:
     with pytest.raises(ValidationError, match="uphill"):
         flash_at(Pressure.from_psig(15.0), Pressure.from_psig(125.0))
+
+
+def test_a_reading_at_saturation_is_neither() -> None:
+    from dripleg.steam.saturated import superheat_at
+    from dripleg.units.temperature import Temperature
+
+    result = superheat_at(Pressure.from_psig(125.0), Temperature.from_fahrenheit(353.0))
+    assert result.is_saturated
+    assert not result.is_superheated
+    assert not result.is_subcooled
+    assert abs(result.degrees) < 1.0
+    assert str(result) == "at saturation at 125.0 psig"
+
+
+def test_a_reading_well_above_saturation_is_superheat() -> None:
+    from dripleg.steam.saturated import superheat_at
+    from dripleg.units.temperature import Temperature
+
+    result = superheat_at(Pressure.from_psig(125.0), Temperature.from_fahrenheit(500.0))
+    assert result.is_superheated
+    assert result.degrees > 100.0
+    assert "of superheat at" in str(result)
+
+
+def test_a_reading_well_below_saturation_is_subcooled() -> None:
+    from dripleg.steam.saturated import superheat_at
+    from dripleg.units.temperature import Temperature
+
+    result = superheat_at(Pressure.from_psig(125.0), Temperature.from_fahrenheit(200.0))
+    assert result.is_subcooled
+    assert result.degrees < -100.0
+    assert "under saturation at" in str(result)
+
+
+def test_the_saturation_line_is_carried_on_the_result() -> None:
+    from dripleg.steam.saturated import superheat_at
+    from dripleg.units.temperature import Temperature
+
+    result = superheat_at(Pressure.from_psig(125.0), Temperature.from_fahrenheit(400.0))
+    assert result.saturation.fahrenheit == pytest.approx(353.0, abs=1.5)
+    assert result.pressure.psig == pytest.approx(125.0)
+
+
+def test_the_table_reaches_a_drum_pressure() -> None:
+    point = at_pressure(Pressure.from_psia(1500.0))
+    assert point.temperature.fahrenheit == pytest.approx(596.2, abs=2.0)
+    assert point.latent_heat.btu_per_pound == pytest.approx(548.0, abs=8.0)
