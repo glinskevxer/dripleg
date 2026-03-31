@@ -183,3 +183,51 @@ def test_printing_a_result_and_a_quarantined_row() -> None:
     result = read_survey_csv(FIELDBOOK.replace("B12-MP-44", "rubbish"))
     assert str(result).startswith("fieldbook: 1 read, 1 quarantined (")
     assert str(result.quarantined[0]).startswith("line 3: ")
+
+
+def test_a_byte_order_mark_does_not_stop_the_file_reading() -> None:
+    result = read_survey_csv("﻿" + FIELDBOOK)
+    assert result.read == 2
+    assert result.is_clean
+
+
+def test_a_byte_order_mark_does_not_change_the_hash() -> None:
+    assert read_survey_csv("﻿" + FIELDBOOK).content_hash == read_survey_csv(FIELDBOOK).content_hash
+
+
+def test_a_semicolon_export_reads() -> None:
+    result = read_survey_csv(FIELDBOOK.replace(",", ";"))
+    assert result.read == 2
+    assert result.observations[0].technician == "R Ellis"
+
+
+def test_a_tab_export_reads() -> None:
+    result = read_survey_csv(FIELDBOOK.replace(",", "\t"))
+    assert result.read == 2
+
+
+def test_the_delimiter_is_decided_on_the_header_alone() -> None:
+    from dripleg.ingest.reader import sniff_dialect
+
+    assert sniff_dialect(FIELDBOOK) == ","
+    assert sniff_dialect(FIELDBOOK.replace(",", ";")) == ";"
+    assert sniff_dialect("") == ","
+    assert sniff_dialect("tag\n") == ","
+
+
+def test_a_note_full_of_semicolons_does_not_change_the_delimiter() -> None:
+    text = FIELDBOOK.replace("plume", "hissing; steady; loud")
+    assert read_survey_csv(text).read == 2
+
+
+def test_trailing_blank_lines_are_ignored() -> None:
+    result = read_survey_csv(FIELDBOOK + "\n\n,,,,,,,,,,,,\n")
+    assert result.read == 2
+    assert result.is_clean
+
+
+def test_a_blank_line_in_the_middle_is_ignored() -> None:
+    first, rest = FIELDBOOK.split("\n", 1)
+    result = read_survey_csv(f"{first}\n\n{rest}")
+    assert result.read == 2
+    assert result.is_clean

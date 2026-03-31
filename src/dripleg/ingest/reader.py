@@ -32,7 +32,13 @@ from dripleg.survey.readings import (
 from dripleg.units.pressure import Pressure
 from dripleg.units.temperature import Temperature
 
-__all__ = ["ImportResult", "QuarantinedRow", "read_survey_csv"]
+__all__ = ["ImportResult", "QuarantinedRow", "read_survey_csv", "sniff_dialect"]
+
+# The three tablets export one of these and nothing else. Sniffing the whole
+# space of delimiters finds tabs inside a note field and cuts a file in half.
+KNOWN_DELIMITERS = (",", ";", "\t")
+
+_BOM = "\ufeff"
 
 _DATE_ORDERS = {
     "ymd": ("%Y-%m-%d", "%Y/%m/%d"),
@@ -96,7 +102,7 @@ def _text(row: dict[str, str], profile: MappingProfile, name: str) -> str:
     if column is None:
         return ""
     for key, value in row.items():
-        if key is not None and key.strip().lower() == column.lower():
+        if key is not None and key.strip().lstrip(_BOM).lower() == column.lower():
             return (value or "").strip()
     return ""
 
@@ -192,10 +198,29 @@ def _sight_glass(text: str) -> SightGlassView:
     raise ValidationError(f"{text!r} is not a sight glass reading", field="sight_glass")
 
 
-def read_survey_csv(text: str, profile: MappingProfile | None = None) -> ImportResult:
-    """Read an export into observations, quarantining the rows that will not go."""
+def sniff_dialect(text: str) -> str:
+    """Which of the three delimiters this file uses.
 
-    reader = csv.DictReader(io.StringIO(text))
+    Decided on the header line alone and only between the three that are
+    actually exported here. A general sniffer gets this wrong on a file whose
+    first note contains a semicolon, and gets it wrong silently.
+    """
+
+    header = text.lstrip(_BOM).splitlines()[0] if text.strip() else ""
+    counts = {delimiter: header.count(delimiter) for delimiter in KNOWN_DELIMITERS}
+    best = max(counts, key=lambda delimiter: counts[delimiter])
+    return best if counts[best] else ","
+
+
+def read_survey_csv(text: str, profile: MappingProfile | None = None) -> ImportResult:
+    """Read an export into observations, quarantining the rows that will not go.
+
+    A byte order mark, a semicolon separated export and trailing blank lines
+    are all things the tablets produce and none of them is worth an error.
+    """
+
+    cleaned = text.lstrip(_BOM)
+    reader = csv.DictReader(io.StringIO(cleaned), delimiter=sniff_dialect(cleaned))
     header = list(reader.fieldnames or [])
     if not header:
         raise DriplegError("the file has no header row")
@@ -210,18 +235,20 @@ def read_survey_csv(text: str, profile: MappingProfile | None = None) -> ImportR
     quarantined: list[QuarantinedRow] = []
     seen: set[TrapTag] = set()
     for line, row in enumerate(reader, start=2):
-        cleaned = {k: (v or "") for k, v in row.items() if k is not None}
+        values = {k: (v or "") for k, v in row.items() if k is not None}
+        if not any(value.strip() for value in values.values()):
+            continue
         try:
-            observation = _row_to_observation(cleaned, chosen)
+            observation = _row_to_observation(values, chosen)
         except (ValidationError, ValueError) as problem:
-            quarantined.append(QuarantinedRow(line=line, reason=str(problem), values=cleaned))
+            quarantined.append(QuarantinedRow(line=line, reason=str(problem), values=values))
             continue
         if observation.tag in seen:
             quarantined.append(
                 QuarantinedRow(
                     line=line,
                     reason=f"{observation.tag} appears twice in this file",
-                    values=cleaned,
+                    values=values,
                 )
             )
             continue
@@ -231,5 +258,5 @@ def read_survey_csv(text: str, profile: MappingProfile | None = None) -> ImportR
         profile=chosen,
         observations=observations,
         quarantined=quarantined,
-        content_hash=hashlib.sha256(text.encode("utf-8")).hexdigest(),
+        content_hash=hashlib.sha256(cleaned.encode("utf-8")).hexdigest(),
     )
