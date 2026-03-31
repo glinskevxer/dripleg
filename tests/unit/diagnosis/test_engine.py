@@ -155,3 +155,21 @@ def test_an_engine_can_be_given_a_trimmed_rule_set() -> None:
 def test_printing_a_diagnosis() -> None:
     result = diagnose(ultrasonic=probe(20.0), sight_glass=SightGlassView.LIVE_STEAM)
     assert str(result) == "B12-MP-0043 2025-04-08 blowing through (100% confident)"
+
+
+def test_a_superheated_leg_reads_as_no_load_not_as_a_failure() -> None:
+    result = diagnose(ultrasonic=probe(20.0), temperature=pipe(500.0, 200.0))
+    assert result.condition is TrapCondition.NO_LOAD
+    assert not result.condition.is_failure
+    assert not result.condition.needs_repair
+    assert result.severity_factor == 0.0
+
+
+def test_the_superheat_rule_is_in_the_default_set() -> None:
+    assert "TMP-6" in DEFAULT_RULES.codes
+
+
+def test_a_saturated_leg_is_unaffected_by_the_superheat_rule() -> None:
+    result = diagnose(ultrasonic=probe(32.0, 2), temperature=pipe(350.0, 200.0))
+    assert result.condition is TrapCondition.OK
+    assert "TMP-6" not in result.evidence.rules_fired

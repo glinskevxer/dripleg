@@ -20,7 +20,7 @@ from __future__ import annotations
 from dripleg.diagnosis.context import DiagnosisContext
 from dripleg.diagnosis.evidence import Evidence
 from dripleg.diagnosis.rules import Rule
-from dripleg.steam.saturated import at_pressure
+from dripleg.steam.saturated import at_pressure, superheat_at
 from dripleg.survey.condition import TrapCondition
 from dripleg.survey.readings import SurveyMethod
 from dripleg.thresholds import (
@@ -37,6 +37,7 @@ __all__ = [
     "ExcessSubcooling",
     "HealthyDrop",
     "HotOutlet",
+    "SuperheatedInlet",
     "WholeTrapCold",
     "expected_outlet",
 ]
@@ -172,6 +173,8 @@ class HealthyDrop(_HeatRule):
         subcooling = context.subcooling
         assert heat is not None
         assert subcooling is not None
+        if superheat_at(context.pressure, heat.upstream).is_superheated:
+            return []
         outlet_saturation = expected_outlet(context)
         outlet_is_cool = heat.downstream.fahrenheit < outlet_saturation.fahrenheit - OUTLET_MARGIN_F
         inlet_is_hot = context.principle.subcooling_is_normal(max(subcooling.fahrenheit, 0.0))
@@ -190,10 +193,38 @@ class HealthyDrop(_HeatRule):
         ]
 
 
+class SuperheatedInlet(_HeatRule):
+    code = "TMP-6"
+    description = "inlet well above saturation, so the leg is not making condensate"
+
+    def look(self, context: DiagnosisContext) -> list[Evidence]:
+        heat = context.heat
+        assert heat is not None
+        state = superheat_at(context.pressure, heat.upstream)
+        if not state.is_superheated:
+            return []
+        # A drip leg on a superheated main still makes condensate on start up
+        # and none at all once it is hot, so a trap here reading no load is
+        # doing its job rather than failing shut.
+        return [
+            Evidence(
+                rule=self.code,
+                statement=(
+                    f"inlet {state.degrees:.0f} F above saturation at {context.pressure}, "
+                    "so there is no condensate for the trap to pass"
+                ),
+                supports=TrapCondition.NO_LOAD,
+                weight=0.55,
+                method=heat.method,
+            )
+        ]
+
+
 HEAT_RULES: tuple[Rule, ...] = (
     HotOutlet(),
     ColdInlet(),
     WholeTrapCold(),
     ExcessSubcooling(),
     HealthyDrop(),
+    SuperheatedInlet(),
 )

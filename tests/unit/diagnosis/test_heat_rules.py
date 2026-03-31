@@ -160,5 +160,44 @@ def test_the_whole_heat_set_on_a_trap_with_a_hot_outlet() -> None:
     assert findings.weight_for(TrapCondition.BLOWING_THROUGH) < 0.5
 
 
-def test_the_heat_rule_codes() -> None:
-    assert RuleSet(list(HEAT_RULES)).codes == ["TMP-1", "TMP-2", "TMP-3", "TMP-4", "TMP-5"]
+def test_an_inlet_well_above_saturation_reads_as_no_load() -> None:
+    from dripleg.diagnosis.heat_rules import SuperheatedInlet
+
+    found = SuperheatedInlet().run(context(500.0, 200.0)).evidence
+    assert len(found) == 1
+    assert found[0].supports is TrapCondition.NO_LOAD
+    assert "above saturation" in found[0].statement
+
+
+def test_an_inlet_at_saturation_is_not_superheated() -> None:
+    from dripleg.diagnosis.heat_rules import SuperheatedInlet
+
+    assert SuperheatedInlet().run(context(353.0, 200.0)).evidence == []
+
+
+def test_a_cold_inlet_is_not_superheated_either() -> None:
+    from dripleg.diagnosis.heat_rules import SuperheatedInlet
+
+    assert SuperheatedInlet().run(context(160.0, 120.0)).evidence == []
+
+
+def test_a_superheated_leg_does_not_also_read_as_a_healthy_drop() -> None:
+    assert HealthyDrop().run(context(500.0, 200.0)).evidence == []
+    assert HealthyDrop().run(context(350.0, 200.0)).evidence != []
+
+
+def test_the_whole_heat_set_on_a_superheated_leg() -> None:
+    findings = RuleSet(list(HEAT_RULES)).run(context(500.0, 200.0))
+    assert findings.conditions() == [TrapCondition.NO_LOAD]
+    assert findings.rules_fired == ["TMP-6"]
+
+
+def test_the_heat_rule_codes_now_run_to_six() -> None:
+    assert RuleSet(list(HEAT_RULES)).codes == [
+        "TMP-1",
+        "TMP-2",
+        "TMP-3",
+        "TMP-4",
+        "TMP-5",
+        "TMP-6",
+    ]
