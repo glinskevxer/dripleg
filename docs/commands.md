@@ -2,7 +2,7 @@
 
 # Commands
 
-65 commands.
+66 commands.
 
 ## `dripleg about`
 
@@ -502,6 +502,14 @@ Mark the work finished. This is not the end of the order.
 | `number` | positional |  |
 | `--on` | The day the work finished. |  |
 | `--cost` | What it actually cost. |  |
+
+## `dripleg work effectiveness`
+
+Whether the finished repairs held at the next survey.
+
+| option | help | default |
+| --- | --- | --- |
+| `--outcome` | Only repairs with this outcome. |  |
 
 ## `dripleg work issue`
 

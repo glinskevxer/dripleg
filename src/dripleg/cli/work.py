@@ -11,6 +11,7 @@ from dripleg.cli.loading import register_for, work_list_for
 from dripleg.cli.output import emit_facts, emit_lines, emit_rows
 from dripleg.errors import ConflictError
 from dripleg.loss.accrual import accrue_all
+from dripleg.programme.verification import assess_repairs
 from dripleg.repair.priority import Priority, WorkList
 from dripleg.repair.spares import build_spares_list
 from dripleg.repair.workorder import WorkOrder
@@ -211,6 +212,50 @@ def work_backlog(context: Context, as_at: str | None) -> None:
         ],
         keys=["tag", "found", "days", "pounds_lost", "accrued"],
         empty="nothing open has ever been costed",
+    )
+
+
+@work_group.command("effectiveness")
+@click.option(
+    "--outcome",
+    default=None,
+    type=click.Choice(["held", "came back", "unproven"]),
+    help="Only repairs with this outcome.",
+)
+@click.pass_obj
+def work_effectiveness(context: Context, outcome: str | None) -> None:
+    """Whether the finished repairs held at the next survey."""
+
+    findings = FindingRepository(context.book)
+    orders = WorkOrderRepository(context.book)
+    report = assess_repairs(
+        orders.all_orders(context.site()),
+        findings.dated_verdicts_per_trap(context.site()),
+    )
+    rows = report.in_outcome(outcome) if outcome is not None else report.outcomes
+    emit_rows(
+        context,
+        [
+            Column("order"),
+            Column("tag"),
+            Column("repaired"),
+            Column("next survey"),
+            Column("found"),
+            Column("outcome"),
+        ],
+        [
+            (
+                row.number,
+                str(row.tag),
+                row.completed_on.isoformat(),
+                "" if row.next_surveyed_on is None else row.next_surveyed_on.isoformat(),
+                "" if row.next_condition is None else row.next_condition.label,
+                row.outcome,
+            )
+            for row in rows
+        ],
+        keys=["order", "tag", "repaired", "next_survey", "found", "outcome"],
+        empty="no repair has been finished yet",
     )
 
 

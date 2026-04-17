@@ -181,6 +181,28 @@ class FindingRepository:
             )
         return history
 
+    def dated_verdicts_per_trap(
+        self, site: SiteCode | str
+    ) -> dict[TrapTag, list[tuple[dt.date, TrapCondition]]]:
+        """Every verdict on every trap with the date of the survey that made it."""
+
+        rows = self.book.query(
+            "SELECT f.tag, f.diagnosed, s.started_on FROM finding f JOIN survey s "
+            "ON s.site_code = f.site_code AND s.reference = f.survey_reference "
+            "WHERE f.site_code = ? ORDER BY s.started_on",
+            (as_site(site).value,),
+        )
+        history: dict[TrapTag, list[tuple[dt.date, TrapCondition]]] = {}
+        for row in rows:
+            tag = TrapTag.parse(str(row["tag"]))
+            history.setdefault(tag, []).append(
+                (
+                    as_date(row["started_on"]),
+                    enum_from_value(TrapCondition, str(row["diagnosed"]), field="diagnosed"),
+                )
+            )
+        return history
+
     def total_cost(self, site: SiteCode | str, reference: str) -> Money:
         cents = self.book.scalar(
             "SELECT COALESCE(SUM(annual_cost_cents), 0) FROM finding "
@@ -275,6 +297,15 @@ class WorkOrderRepository:
             else Money.from_cents(int(row["actual_cost_cents"])),
             history=[str(event["note"]) for event in events],
         )
+
+    def all_orders(self, site: SiteCode | str) -> list[WorkOrder]:
+        """Every order this site has ever raised, oldest first."""
+
+        rows = self.book.query(
+            "SELECT number FROM work_order WHERE site_code = ? ORDER BY raised_on, number",
+            (as_site(site).value,),
+        )
+        return [self.get(str(row["number"])) for row in rows]
 
     def open_orders(self, site: SiteCode | str) -> list[WorkOrder]:
         rows = self.book.query(
