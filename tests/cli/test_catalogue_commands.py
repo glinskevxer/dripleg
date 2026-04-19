@@ -7,6 +7,7 @@ import pytest
 from click.testing import CliRunner, Result
 
 from dripleg.cli.main import cli
+from tests.support.cli import run
 
 
 @pytest.fixture
@@ -16,10 +17,6 @@ def book(tmp_path: Path) -> str:
     runner.invoke(cli, ["--book", str(target), "init"])
     runner.invoke(cli, ["--book", str(target), "site", "add", "WRX1", "Mill", "--operator", "Bryn"])
     return str(target)
-
-
-def run(book: str, *args: str) -> Result:
-    return CliRunner().invoke(cli, ["--book", book, *args])
 
 
 def add_model(book: str, code: str = "TD52", *extra: str) -> Result:

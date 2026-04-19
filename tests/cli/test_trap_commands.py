@@ -4,50 +4,14 @@ import json
 from pathlib import Path
 
 import pytest
-from click.testing import CliRunner, Result
+from click.testing import Result
 
-from dripleg.cli.main import cli
-
-
-def run(book: str, *args: str) -> Result:
-    return CliRunner().invoke(cli, ["--book", book, *args])
+from tests.support.cli import make_book, run
 
 
 @pytest.fixture
 def book(tmp_path: Path) -> str:
-    target = str(tmp_path / "wrx1.sqlite3")
-    run(target, "init")
-    run(target, "site", "add", "WRX1", "Mill", "--operator", "Bryn")
-    run(target, "--site", "WRX1", "area", "add", "B12", "Machine", "--cost-centre", "PM2")
-    run(
-        target,
-        "--site",
-        "WRX1",
-        "header",
-        "add",
-        "B12",
-        "MP",
-        "Machine room main",
-        "--psig",
-        "125",
-        "--discharge-psig",
-        "15",
-    )
-    run(
-        target,
-        "model",
-        "add",
-        "Halden",
-        "TD52",
-        "--principle",
-        "thermodynamic_disc",
-        "--orifice",
-        "0.093",
-        "--pmo",
-        "600",
-        "--price",
-        "184.00",
-    )
+    target = make_book(tmp_path, name="wrx1.sqlite3")
     run(
         target,
         "model",
@@ -63,7 +27,6 @@ def book(tmp_path: Path) -> str:
         "--price",
         "96.50",
     )
-    run(target, "--site", "WRX1", "profile", "add", "CONT", "Continuous")
     return target
 
 

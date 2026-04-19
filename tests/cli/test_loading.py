@@ -3,7 +3,6 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-from click.testing import CliRunner, Result
 
 from dripleg.cli.context import Context
 from dripleg.cli.loading import (
@@ -14,8 +13,8 @@ from dripleg.cli.loading import (
     survey_for,
     work_list_for,
 )
-from dripleg.cli.main import cli
 from dripleg.errors import NotFoundError
+from tests.support.cli import make_book, run
 
 EXPORT = (
     "tag,date,by,condition,db,seconds,cycles,up_f,down_f,amb_f,glass,psig,note\n"
@@ -24,46 +23,9 @@ EXPORT = (
 )
 
 
-def run(book: str, *args: str) -> Result:
-    return CliRunner().invoke(cli, ["--book", book, *args])
-
-
 @pytest.fixture
 def context(tmp_path: Path) -> Context:
-    target = str(tmp_path / "wrx1.sqlite3")
-    run(target, "init")
-    run(target, "site", "add", "WRX1", "Mill", "--operator", "Bryn")
-    run(target, "--site", "WRX1", "area", "add", "B12", "Machine", "--cost-centre", "PM2")
-    run(
-        target,
-        "--site",
-        "WRX1",
-        "header",
-        "add",
-        "B12",
-        "MP",
-        "Main",
-        "--psig",
-        "125",
-        "--discharge-psig",
-        "15",
-    )
-    run(
-        target,
-        "model",
-        "add",
-        "Halden",
-        "TD52",
-        "--principle",
-        "thermodynamic_disc",
-        "--orifice",
-        "0.093",
-        "--pmo",
-        "600",
-        "--price",
-        "184.00",
-    )
-    run(target, "--site", "WRX1", "profile", "add", "CONT", "Continuous")
+    target = make_book(tmp_path, name="wrx1.sqlite3")
     for tag in ("B12-MP-1", "B12-MP-2"):
         run(
             target,

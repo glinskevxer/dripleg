@@ -4,13 +4,10 @@ import json
 from pathlib import Path
 
 import pytest
-from click.testing import CliRunner, Result
+from click.testing import CliRunner
 
 from dripleg.cli.main import cli
-
-
-def run(book: str, *args: str) -> Result:
-    return CliRunner().invoke(cli, ["--book", book, *args])
+from tests.support.cli import run
 
 
 @pytest.fixture

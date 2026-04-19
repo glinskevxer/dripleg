@@ -4,9 +4,10 @@ import json
 from pathlib import Path
 
 import pytest
-from click.testing import CliRunner, Result
+from click.testing import CliRunner
 
 from dripleg.cli.main import cli
+from tests.support.cli import run
 
 
 @pytest.fixture
@@ -14,10 +15,6 @@ def book(tmp_path: Path) -> str:
     target = tmp_path / "wrx1.sqlite3"
     CliRunner().invoke(cli, ["--book", str(target), "init"])
     return str(target)
-
-
-def run(book: str, *args: str) -> Result:
-    return CliRunner().invoke(cli, ["--book", book, *args])
 
 
 def test_a_site_is_added_and_listed(book: str) -> None:
