@@ -2,7 +2,7 @@
 
 # Commands
 
-66 commands.
+67 commands.
 
 ## `dripleg about`
 
@@ -34,6 +34,15 @@ Run sqlite's own integrity check and report the schema state.
 ## `dripleg book vacuum`
 
 Rebuild the file, which reclaims space after a big delete.
+
+## `dripleg doctor`
+
+Run every check on this book and say whether anything needs doing.
+
+| option | help | default |
+| --- | --- | --- |
+| `--on` | The day to judge review dates against. |  |
+| `--strict` | Fail on a warning as well as an error. |  |
 
 ## `dripleg header add`
 
