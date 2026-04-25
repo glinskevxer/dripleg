@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import csv
 import datetime as dt
+import sys
 
 import click
 
@@ -20,7 +22,24 @@ from dripleg.store.finding_repo import FindingRepository
 from dripleg.units.money import Money, Price
 from dripleg.units.temperature import Temperature
 
-__all__ = ["loss_group", "prices_group"]
+__all__ = ["LOSS_COLUMNS", "loss_group", "prices_group"]
+
+LOSS_COLUMNS = (
+    "tag",
+    "area",
+    "service",
+    "condition",
+    "confidence",
+    "rules",
+    "pounds_per_hour",
+    "pounds_per_year",
+    "fuel_mmbtu_per_year",
+    "tonnes_co2e",
+    "fuel_cents",
+    "water_side_cents",
+    "annual_cents",
+    "share_of_total",
+)
 
 
 @click.group("prices")
@@ -169,6 +188,38 @@ def loss_top(context: Context, limit: int) -> None:
         keys=["tag", "survey", "condition", "pounds_per_hour", "annual"],
         empty="nothing costed yet",
     )
+
+
+@loss_group.command("export")
+@click.argument("reference")
+@click.option("--losing-only", is_flag=True, help="Leave the healthy traps out.")
+@click.pass_obj
+def loss_export(context: Context, reference: str, losing_only: bool) -> None:
+    """Write the costed register out as csv for a spreadsheet to argue with."""
+
+    register = loss_register_for(context, reference)
+    rows = register.losing if losing_only else register.rows
+    writer = csv.writer(sys.stdout, lineterminator="\n")
+    writer.writerow(LOSS_COLUMNS)
+    for row in rows:
+        writer.writerow(
+            [
+                str(row.tag),
+                str(row.area),
+                row.service.value,
+                row.condition.value,
+                f"{row.diagnosis.confidence:.3f}",
+                "|".join(row.diagnosis.evidence.rules_fired),
+                f"{row.steam.flow.pounds_per_hour:.2f}",
+                f"{row.steam.pounds_per_year:.0f}",
+                f"{row.heat.mmbtu_per_year:.2f}",
+                f"{row.stack.tonnes_co2e:.3f}",
+                row.cost.fuel.cents,
+                row.cost.water_side.cents,
+                row.annual_cost.cents,
+                f"{register.share_of_total(row):.4f}",
+            ]
+        )
 
 
 @loss_group.command("trap")

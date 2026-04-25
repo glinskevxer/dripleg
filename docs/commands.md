@@ -2,7 +2,7 @@
 
 # Commands
 
-67 commands.
+68 commands.
 
 ## `dripleg about`
 
@@ -69,6 +69,15 @@ Every header at a site.
 ## `dripleg init`
 
 Make the book if it is not there, and apply anything outstanding.
+
+## `dripleg loss export`
+
+Write the costed register out as csv for a spreadsheet to argue with.
+
+| option | help | default |
+| --- | --- | --- |
+| `reference` | positional |  |
+| `--losing-only` | Leave the healthy traps out. |  |
 
 ## `dripleg loss report`
 
