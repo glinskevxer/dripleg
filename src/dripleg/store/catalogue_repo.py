@@ -29,8 +29,8 @@ class CatalogueRepository:
             self.book.execute(
                 "INSERT INTO trap_model (manufacturer, code, principle, orifice_diameter_in, "
                 "max_operating_psia, max_back_pressure_pct, connection_size_in, "
-                "connection_type, list_price_cents, discontinued, replaced_by) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
+                "connection_type, list_price_cents, discontinued, replaced_by, warranty_months) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
                 "ON CONFLICT(manufacturer, code) DO UPDATE SET "
                 "principle = excluded.principle, "
                 "orifice_diameter_in = excluded.orifice_diameter_in, "
@@ -40,7 +40,8 @@ class CatalogueRepository:
                 "connection_type = excluded.connection_type, "
                 "list_price_cents = excluded.list_price_cents, "
                 "discontinued = excluded.discontinued, "
-                "replaced_by = excluded.replaced_by",
+                "replaced_by = excluded.replaced_by, "
+                "warranty_months = excluded.warranty_months",
                 (
                     model.manufacturer,
                     model.code,
@@ -53,6 +54,7 @@ class CatalogueRepository:
                     model.list_price.cents,
                     1 if model.discontinued else 0,
                     model.replaced_by,
+                    model.warranty_months,
                 ),
             )
 
@@ -98,6 +100,7 @@ class CatalogueRepository:
             list_price=Money.from_cents(int(row["list_price_cents"])),
             discontinued=bool(row["discontinued"]),
             replaced_by=None if replaced is None else str(replaced),
+            warranty_months=int(row["warranty_months"]),
         )
 
 

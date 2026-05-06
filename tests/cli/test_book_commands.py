@@ -159,11 +159,13 @@ def test_a_work_order_on_a_deleted_station_is_found(book: str) -> None:
     assert "work order on an unknown tag" in kinds
 
 
-def test_a_vacuum_reports_what_it_reclaimed(book: str) -> None:
+def test_a_vacuum_reports_the_change_signed(book: str) -> None:
     payload = json.loads(run(book, "--json", "book", "vacuum").output)
     assert payload["pages_before"] > 0
     assert payload["pages_after"] > 0
-    assert payload["bytes_saved"] >= 0
+    change = payload["bytes_change"]
+    pages = payload["pages_after"] - payload["pages_before"]
+    assert change == pages * 4096 or change % 512 == 0
 
 
 def test_checking_a_book_that_is_not_there(tmp_path: Path) -> None:

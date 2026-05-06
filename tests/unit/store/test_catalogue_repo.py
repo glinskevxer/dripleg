@@ -166,3 +166,16 @@ def test_campaign_months_round_trip_through_text() -> None:
 def test_a_bad_month_list_is_caught() -> None:
     with pytest.raises(ValidationError, match="not a month number"):
         months_from_text("3,april")
+
+
+def test_the_warranty_survives_the_trip(book: Database) -> None:
+    repo = CatalogueRepository(book)
+    repo.save(a_model(warranty_months=36))
+    assert repo.get("Halden", "TD52").warranty_months == 36
+
+
+def test_the_warranty_defaults_to_a_year(book: Database) -> None:
+    repo = CatalogueRepository(book)
+    repo.save(a_model())
+    assert repo.get("Halden", "TD52").warranty_months == 12
+    assert repo.get("Halden", "TD52").has_warranty

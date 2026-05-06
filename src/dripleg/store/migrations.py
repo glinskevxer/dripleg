@@ -378,6 +378,29 @@ MIGRATION_008 = Migration(
     """,
 )
 
+MIGRATION_009 = Migration(
+    9,
+    "warranty on the traps that have been changed",
+    """
+    ALTER TABLE trap_model ADD COLUMN warranty_months INTEGER NOT NULL DEFAULT 12;
+
+    CREATE TABLE trap_fitting (
+        site_code     TEXT NOT NULL,
+        tag           TEXT NOT NULL,
+        fitted_on     TEXT NOT NULL,
+        manufacturer  TEXT NOT NULL,
+        model_code    TEXT NOT NULL,
+        work_order    TEXT,
+        PRIMARY KEY (site_code, tag, fitted_on),
+        FOREIGN KEY (site_code, tag)
+            REFERENCES trap_station(site_code, tag) ON DELETE CASCADE,
+        FOREIGN KEY (manufacturer, model_code) REFERENCES trap_model(manufacturer, code)
+    );
+
+    CREATE INDEX fitting_by_tag ON trap_fitting (site_code, tag, fitted_on);
+    """,
+)
+
 MIGRATIONS: tuple[Migration, ...] = (
     MIGRATION_001,
     MIGRATION_002,
@@ -387,6 +410,7 @@ MIGRATIONS: tuple[Migration, ...] = (
     MIGRATION_006,
     MIGRATION_007,
     MIGRATION_008,
+    MIGRATION_009,
 )
 
 

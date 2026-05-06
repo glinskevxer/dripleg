@@ -65,6 +65,7 @@ class TrapModel:
     list_price: Money
     discontinued: bool = False
     replaced_by: str | None = None
+    warranty_months: int = 12
 
     def __post_init__(self) -> None:
         maker = " ".join(self.manufacturer.split()).upper()
@@ -94,6 +95,10 @@ class TrapModel:
             )
         if self.list_price.cents < 0:
             raise ValidationError("a list price is not negative", field="list_price")
+        if not 0 <= self.warranty_months <= 120:
+            raise ValidationError(
+                "a warranty runs from nothing to ten years", field="warranty_months"
+            )
         if self.replaced_by is not None and not self.discontinued:
             raise ValidationError(
                 "only a discontinued model is replaced by another one",
@@ -126,6 +131,10 @@ class TrapModel:
 
     def is_orderable(self) -> bool:
         return not self.discontinued
+
+    @property
+    def has_warranty(self) -> bool:
+        return self.warranty_months > 0
 
     def __str__(self) -> str:
         return f"{self.manufacturer} {self.code} ({self.orifice_diameter_in:.3f} in)"

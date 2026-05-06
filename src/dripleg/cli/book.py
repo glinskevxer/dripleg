@@ -59,7 +59,11 @@ def book_audit(context: Context) -> None:
 @book_group.command("vacuum")
 @click.pass_obj
 def book_vacuum(context: Context) -> None:
-    """Rebuild the file, which reclaims space after a big delete."""
+    """Rebuild the file, which reclaims space after a big delete.
+
+    The change is reported signed rather than as a saving, because a vacuum on
+    a book that has never had anything deleted from it usually adds a page.
+    """
 
     before = context.book.scalar("PRAGMA page_count") or 0
     context.book.execute("VACUUM")
@@ -71,6 +75,6 @@ def book_vacuum(context: Context) -> None:
             "path": context.book_path,
             "pages_before": int(before),
             "pages_after": int(after),
-            "bytes_saved": int((int(before) - int(after)) * int(page)),
+            "bytes_change": int((int(after) - int(before)) * int(page)),
         },
     )

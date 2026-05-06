@@ -2,7 +2,7 @@
 
 # Schema
 
-8 migrations, 17 tables.
+9 migrations, 18 tables.
 
 ## accepted_risk
 
@@ -198,6 +198,19 @@ Indexes: observation_by_condition, observation_by_tag.
 
 1 check constraints.
 
+## trap_fitting
+
+| column | type | required |
+| --- | --- | --- |
+| site_code | TEXT | yes |
+| tag | TEXT | yes |
+| fitted_on | TEXT | yes |
+| manufacturer | TEXT | yes |
+| model_code | TEXT | yes |
+| work_order | TEXT | no |
+
+Indexes: fitting_by_tag.
+
 ## trap_model
 
 | column | type | required |
@@ -213,6 +226,7 @@ Indexes: observation_by_condition, observation_by_tag.
 | list_price_cents | INTEGER | yes |
 | discontinued | INTEGER | yes |
 | replaced_by | TEXT | no |
+| warranty_months | INTEGER | yes |
 
 6 check constraints.
 

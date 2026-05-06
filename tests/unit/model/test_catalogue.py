@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+from dataclasses import replace
 
 import pytest
 
@@ -205,3 +206,20 @@ def test_iterating_the_catalogue_is_sorted() -> None:
 
 def test_printing_a_model() -> None:
     assert str(model()) == "HALDEN TD52 (0.093 in)"
+
+
+def test_a_model_carries_a_warranty() -> None:
+    assert model().warranty_months == 12
+    assert model().has_warranty
+
+
+def test_a_model_with_no_warranty_says_so() -> None:
+    entry = replace(model(), warranty_months=0)
+    assert not entry.has_warranty
+
+
+def test_a_daft_warranty_is_refused() -> None:
+    with pytest.raises(ValidationError, match="nothing to ten years"):
+        replace(model(), warranty_months=-1)
+    with pytest.raises(ValidationError, match="nothing to ten years"):
+        replace(model(), warranty_months=200)
