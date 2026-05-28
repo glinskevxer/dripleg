@@ -2,7 +2,7 @@
 
 # Commands
 
-68 commands.
+70 commands.
 
 ## `dripleg about`
 
@@ -448,6 +448,14 @@ Write the register out in the shape `trap import` reads back.
 | --- | --- | --- |
 | `--live` | Only traps still in service today. |  |
 
+## `dripleg trap history`
+
+Every trap that has ever been fitted to one station.
+
+| option | help | default |
+| --- | --- | --- |
+| `tag` | positional |  |
+
 ## `dripleg trap import`
 
 Read an asset register export into the book.
@@ -476,6 +484,7 @@ Put a different trap on the same station.
 | `tag` | positional |  |
 | `--model` | Maker and code, as 'Halden/TD75'. |  |
 | `--on` | The day the new trap went in. |  |
+| `--work-order` | The order that put it in. |  |
 
 ## `dripleg trap retire`
 
@@ -502,6 +511,14 @@ Hold every drip station against the condensate it has to clear.
 | --- | --- | --- |
 | `--wrong-only` | Only the stations that are not right. |  |
 | `--cold-f` | Temperature the run starts from. | 60.0 |
+
+## `dripleg trap warranty`
+
+The traps still inside the warranty they were bought with.
+
+| option | help | default |
+| --- | --- | --- |
+| `--on` | The day to judge the warranties against. |  |
 
 ## `dripleg work backlog`
 

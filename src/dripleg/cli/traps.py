@@ -20,6 +20,7 @@ from dripleg.model.tags import SiteCode, TrapTag
 from dripleg.report.table import Column
 from dripleg.sizing.audit import audit_sizing
 from dripleg.store.catalogue_repo import CatalogueRepository, ProfileRepository
+from dripleg.store.fitting_repo import FittingRepository
 from dripleg.store.plant_repo import PlantRepository
 from dripleg.store.station_repo import StationRepository
 from dripleg.units.temperature import Temperature
@@ -150,6 +151,9 @@ def trap_add(
         note=note,
     )
     StationRepository(context.book).save(station)
+    FittingRepository(context.book).record(
+        context.site(), station.tag, station.model, station.installed_on
+    )
     emit_facts(context, _facts(station))
 
 
@@ -229,17 +233,88 @@ def trap_retire(context: Context, tag: str, on: str) -> None:
 @click.argument("tag")
 @click.option("--model", "model_code", required=True, help="Maker and code, as 'Halden/TD75'.")
 @click.option("--on", required=True, help="The day the new trap went in.")
+@click.option("--work-order", default=None, help="The order that put it in.")
 @click.pass_obj
-def trap_refit(context: Context, tag: str, model_code: str, on: str) -> None:
+def trap_refit(
+    context: Context, tag: str, model_code: str, on: str, work_order: str | None
+) -> None:
     """Put a different trap on the same station."""
 
     repo = StationRepository(context.book)
     station = repo.get(context.site(), tag)
     manufacturer, _, code = model_code.partition("/")
     model = CatalogueRepository(context.book).get(manufacturer, code or manufacturer)
-    refitted = station.replaced_with(model, dt.date.fromisoformat(on))
+    fitted_on = dt.date.fromisoformat(on)
+    refitted = station.replaced_with(model, fitted_on)
     repo.save(refitted)
+    FittingRepository(context.book).record(
+        context.site(), refitted.tag, model, fitted_on, work_order
+    )
     emit_facts(context, _facts(refitted))
+
+
+@trap_group.command("history")
+@click.argument("tag")
+@click.pass_obj
+def trap_history(context: Context, tag: str) -> None:
+    """Every trap that has ever been fitted to one station."""
+
+    fittings = FittingRepository(context.book).history_for(context.site(), tag)
+    today = dt.date.today()
+    emit_rows(
+        context,
+        [
+            Column("fitted"),
+            Column("model"),
+            Column("order"),
+            Column("warranty ends"),
+            Column.number("days in"),
+        ],
+        [
+            (
+                fitting.fitted_on.isoformat(),
+                f"{fitting.manufacturer} {fitting.model_code}",
+                fitting.work_order or "",
+                fitting.warranty_ends.isoformat(),
+                fitting.age_days_on(today),
+            )
+            for fitting in fittings
+        ],
+        keys=["fitted", "model", "work_order", "warranty_ends", "days_in"],
+        empty="nothing has ever been fitted to that station",
+    )
+
+
+@trap_group.command("warranty")
+@click.option("--on", default=None, help="The day to judge the warranties against.")
+@click.pass_obj
+def trap_warranty(context: Context, on: str | None) -> None:
+    """The traps still inside the warranty they were bought with."""
+
+    day = dt.date.fromisoformat(on) if on is not None else dt.date.today()
+    fittings = FittingRepository(context.book).in_warranty_on(context.site(), day)
+    emit_rows(
+        context,
+        [
+            Column("tag"),
+            Column("model"),
+            Column("fitted"),
+            Column("warranty ends"),
+            Column.number("days left"),
+        ],
+        [
+            (
+                str(fitting.tag),
+                f"{fitting.manufacturer} {fitting.model_code}",
+                fitting.fitted_on.isoformat(),
+                fitting.warranty_ends.isoformat(),
+                (fitting.warranty_ends - day).days,
+            )
+            for fitting in fittings
+        ],
+        keys=["tag", "model", "fitted", "warranty_ends", "days_left"],
+        empty="nothing on this site is still under warranty",
+    )
 
 
 @trap_group.command("sizing")
