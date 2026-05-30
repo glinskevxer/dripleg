@@ -2,7 +2,7 @@
 
 # Commands
 
-70 commands.
+72 commands.
 
 ## `dripleg about`
 
@@ -43,6 +43,14 @@ Run every check on this book and say whether anything needs doing.
 | --- | --- | --- |
 | `--on` | The day to judge review dates against. |  |
 | `--strict` | Fail on a warning as well as an error. |  |
+
+## `dripleg fleet sites`
+
+One row per site: what is on it and what the last survey found.
+
+## `dripleg fleet total`
+
+The whole book added up, which is the number a group report wants.
 
 ## `dripleg header add`
 

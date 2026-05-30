@@ -13,6 +13,7 @@ from dripleg.cli.catalogue import model_group, profile_group
 from dripleg.cli.context import DEFAULT_BOOK, Context
 from dripleg.cli.costing import loss_group, prices_group
 from dripleg.cli.doctor import doctor_command
+from dripleg.cli.fleet import fleet_group
 from dripleg.cli.plant import area_group, header_group, site_group
 from dripleg.cli.programme import programme_group
 from dripleg.cli.risk import risk_group
@@ -89,6 +90,7 @@ def about(context: Context) -> None:
 
 cli.add_command(book_group)
 cli.add_command(doctor_command)
+cli.add_command(fleet_group)
 cli.add_command(site_group)
 cli.add_command(area_group)
 cli.add_command(header_group)
