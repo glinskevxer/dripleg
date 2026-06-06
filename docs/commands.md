@@ -2,7 +2,7 @@
 
 # Commands
 
-72 commands.
+73 commands.
 
 ## `dripleg about`
 
@@ -77,6 +77,15 @@ Every header at a site.
 ## `dripleg init`
 
 Make the book if it is not there, and apply anything outstanding.
+
+## `dripleg loss energy`
+
+The steam, fuel and carbon a survey found, rather than the money.
+
+| option | help | default |
+| --- | --- | --- |
+| `reference` | positional |  |
+| `--top` | How many traps to name. | 10 |
 
 ## `dripleg loss export`
 

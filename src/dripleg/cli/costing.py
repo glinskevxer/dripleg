@@ -15,6 +15,7 @@ from dripleg.loss.cost import CostBasis
 from dripleg.loss.emissions import FACTORS, factor_named
 from dripleg.loss.energy import EnergyModel
 from dripleg.repair.recommend import RepairBasis
+from dripleg.report.energy_report import build_energy_report
 from dripleg.report.loss_report import build_loss_report
 from dripleg.report.table import Column
 from dripleg.store.basis_repo import BasisRepository, SiteBasis
@@ -188,6 +189,17 @@ def loss_top(context: Context, limit: int) -> None:
         keys=["tag", "survey", "condition", "pounds_per_hour", "annual"],
         empty="nothing costed yet",
     )
+
+
+@loss_group.command("energy")
+@click.argument("reference")
+@click.option("--top", default=10, show_default=True, help="How many traps to name.")
+@click.pass_obj
+def loss_energy(context: Context, reference: str, top: int) -> None:
+    """The steam, fuel and carbon a survey found, rather than the money."""
+
+    report = build_energy_report(loss_register_for(context, reference), top)
+    emit_lines(context, report.lines(), report.as_dict())
 
 
 @loss_group.command("export")

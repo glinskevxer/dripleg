@@ -144,3 +144,23 @@ def test_a_trap_with_no_costed_history(book: str) -> None:
 
 def test_costing_a_survey_that_is_not_there(book: str) -> None:
     assert run(book, "--site", "WRX1", "loss", "report", "S2099-9").exit_code != 0
+
+
+def test_the_energy_report_reads_in_fuel_and_carbon(book: str) -> None:
+    report = run(book, "loss", "energy", "S2025-1")
+    assert report.exit_code == 0
+    assert "MMBtu of fuel" in report.output.splitlines()[0]
+    assert "makeup water" in report.output
+    assert "by area" in report.output
+
+
+def test_the_energy_report_in_json(book: str) -> None:
+    payload = json.loads(run(book, "--json", "loss", "energy", "S2025-1").output)
+    assert payload["factor"] == "natural gas"
+    assert float(payload["mmbtu"]) > 0
+    assert len(payload["traps"]) == 1
+
+
+def test_the_energy_report_can_be_cut_short(book: str) -> None:
+    payload = json.loads(run(book, "--json", "loss", "energy", "S2025-1", "--top", "0").output)
+    assert payload["traps"] == []
