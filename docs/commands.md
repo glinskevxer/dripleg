@@ -2,7 +2,7 @@
 
 # Commands
 
-73 commands.
+74 commands.
 
 ## `dripleg about`
 
@@ -105,6 +105,15 @@ Cost a survey and print the register.
 | `reference` | positional |  |
 | `--top` | How many traps to name. | 10 |
 | `--save` | Write the findings back to the book. |  |
+
+## `dripleg loss sensitivity`
+
+Move each assumption on one trap and say how far the answer goes.
+
+| option | help | default |
+| --- | --- | --- |
+| `reference` | positional |  |
+| `tag` | positional |  |
 
 ## `dripleg loss top`
 

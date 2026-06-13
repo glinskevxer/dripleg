@@ -9,11 +9,13 @@ import sys
 import click
 
 from dripleg.cli.context import Context
-from dripleg.cli.loading import loss_register_for
+from dripleg.cli.loading import basis_for, loss_register_for
 from dripleg.cli.output import emit_facts, emit_lines, emit_rows
+from dripleg.errors import NotFoundError
 from dripleg.loss.cost import CostBasis
 from dripleg.loss.emissions import FACTORS, factor_named
 from dripleg.loss.energy import EnergyModel
+from dripleg.loss.sensitivity import sweep
 from dripleg.repair.recommend import RepairBasis
 from dripleg.report.energy_report import build_energy_report
 from dripleg.report.loss_report import build_loss_report
@@ -188,6 +190,47 @@ def loss_top(context: Context, limit: int) -> None:
         ],
         keys=["tag", "survey", "condition", "pounds_per_hour", "annual"],
         empty="nothing costed yet",
+    )
+
+
+@loss_group.command("sensitivity")
+@click.argument("reference")
+@click.argument("tag")
+@click.pass_obj
+def loss_sensitivity(context: Context, reference: str, tag: str) -> None:
+    """Move each assumption on one trap and say how far the answer goes."""
+
+    register = loss_register_for(context, reference)
+    row = register.find(tag)
+    if row is None:
+        raise NotFoundError("costed trap", tag)
+    basis = basis_for(context)
+    result = sweep(row.station, row.condition, basis.energy, basis.costs, basis.factor)
+    emit_rows(
+        context,
+        [
+            Column("assumption"),
+            Column("low"),
+            Column.number("gives"),
+            Column.number("as costed"),
+            Column("high"),
+            Column.number("gives"),
+            Column.number("swing"),
+        ],
+        [
+            (
+                swing.assumption,
+                swing.low_label,
+                str(swing.low_cost),
+                str(swing.base_cost),
+                swing.high_label,
+                str(swing.high_cost),
+                f"{swing.share_of_base:.0%}",
+            )
+            for swing in result.swings
+        ],
+        keys=["assumption", "low", "low_cost", "base_cost", "high", "high_cost", "swing"],
+        empty="that trap is losing nothing, so nothing moves it",
     )
 
 
