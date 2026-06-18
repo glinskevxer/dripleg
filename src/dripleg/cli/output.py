@@ -15,7 +15,11 @@ import click
 from dripleg.cli.context import Context
 from dripleg.report.table import Column, Table
 
-__all__ = ["emit_rows", "emit_facts", "emit_lines"]
+__all__ = [
+    "emit_facts",
+    "emit_lines",
+    "emit_rows",
+]
 
 
 def emit_rows(

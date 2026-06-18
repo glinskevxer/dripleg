@@ -27,8 +27,8 @@ from dripleg.units.temperature import Temperature
 
 __all__ = [
     "ORIFICE_CONSTANT",
-    "SizingVerdict",
     "SizingCheck",
+    "SizingVerdict",
     "check_sizing",
     "condensate_capacity",
     "condensate_density",

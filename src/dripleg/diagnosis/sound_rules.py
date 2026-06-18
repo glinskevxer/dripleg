@@ -25,12 +25,12 @@ from dripleg.survey.condition import TrapCondition
 from dripleg.survey.readings import SurveyMethod
 
 __all__ = [
-    "SOUND_RULES",
     "CycleRateHigh",
     "HealthyCycling",
     "LevelBlowThrough",
     "LevelLeaking",
     "NoCyclesOnCyclingTrap",
+    "SOUND_RULES",
     "Silent",
     "sound_bands",
 ]

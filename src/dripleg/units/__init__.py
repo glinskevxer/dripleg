@@ -30,10 +30,10 @@ from dripleg.units.temperature import (
 __all__ = [
     "ABSOLUTE_ZERO_F",
     "ATMOSPHERE_PSIA",
-    "HOURS_PER_YEAR",
     "Energy",
     "EnergyRate",
     "EnergyUnit",
+    "HOURS_PER_YEAR",
     "Mass",
     "MassFlow",
     "MassFlowUnit",

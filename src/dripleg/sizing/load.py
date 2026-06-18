@@ -28,8 +28,8 @@ from dripleg.units.temperature import Temperature
 __all__ = [
     "BARE_PIPE_COEFFICIENT",
     "PIPE_SIZES",
-    "STEEL_SPECIFIC_HEAT",
     "PipeSize",
+    "STEEL_SPECIFIC_HEAT",
     "pipe_size",
     "running_load",
     "warmup_load",

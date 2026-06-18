@@ -32,9 +32,9 @@ from dripleg.thresholds import (
 from dripleg.units.temperature import Temperature
 
 __all__ = [
-    "HEAT_RULES",
     "ColdInlet",
     "ExcessSubcooling",
+    "HEAT_RULES",
     "HealthyDrop",
     "HotOutlet",
     "SuperheatedInlet",

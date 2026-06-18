@@ -17,7 +17,10 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import Protocol, TextIO, runtime_checkable
 
-__all__ = ["Report", "Rendered"]
+__all__ = [
+    "Rendered",
+    "Report",
+]
 
 
 @runtime_checkable

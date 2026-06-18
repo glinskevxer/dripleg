@@ -23,7 +23,11 @@ from dripleg.loss.energy import HeatLoss
 from dripleg.units.flow import Mass
 from dripleg.units.money import Money, Price
 
-__all__ = ["POUNDS_PER_GALLON", "CostBasis", "LossCost"]
+__all__ = [
+    "CostBasis",
+    "LossCost",
+    "POUNDS_PER_GALLON",
+]
 
 POUNDS_PER_GALLON = 8.3378
 """Water at boiler house temperatures, near enough for a makeup bill."""

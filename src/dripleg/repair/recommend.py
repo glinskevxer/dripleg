@@ -29,7 +29,12 @@ from dripleg.model.tags import TrapTag
 from dripleg.survey.condition import TrapCondition
 from dripleg.units.money import Money, Price
 
-__all__ = ["Action", "RepairBasis", "Recommendation", "recommend"]
+__all__ = [
+    "Action",
+    "Recommendation",
+    "RepairBasis",
+    "recommend",
+]
 
 
 class Action(Enum):

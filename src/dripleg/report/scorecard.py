@@ -24,7 +24,10 @@ from dripleg.report.base import Rendered
 from dripleg.report.table import Column, Table
 from dripleg.units.money import Money
 
-__all__ = ["Scorecard", "ScoreLine"]
+__all__ = [
+    "ScoreLine",
+    "Scorecard",
+]
 
 
 @dataclass(frozen=True)

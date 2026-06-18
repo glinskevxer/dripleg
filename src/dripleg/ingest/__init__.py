@@ -9,4 +9,9 @@ from dripleg.ingest.profile import (
     profile_named,
 )
 
-__all__ = ["PROFILES", "MappingProfile", "profile_for_header", "profile_named"]
+__all__ = [
+    "MappingProfile",
+    "PROFILES",
+    "profile_for_header",
+    "profile_named",
+]

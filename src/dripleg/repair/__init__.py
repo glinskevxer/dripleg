@@ -4,4 +4,9 @@ from __future__ import annotations
 
 from dripleg.repair.recommend import Action, Recommendation, RepairBasis, recommend
 
-__all__ = ["Action", "RepairBasis", "Recommendation", "recommend"]
+__all__ = [
+    "Action",
+    "Recommendation",
+    "RepairBasis",
+    "recommend",
+]

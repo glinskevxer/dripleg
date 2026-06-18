@@ -21,7 +21,13 @@ from pathlib import Path
 from dripleg.store.db import Database
 from dripleg.store.migrations import MIGRATIONS, migrate
 
-__all__ = ["DEFAULT_PATH", "TableSchema", "main", "render", "read_schema"]
+__all__ = [
+    "DEFAULT_PATH",
+    "TableSchema",
+    "main",
+    "read_schema",
+    "render",
+]
 
 DEFAULT_PATH = Path("docs/schema.md")
 
