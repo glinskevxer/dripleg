@@ -340,7 +340,15 @@ class WorkOrderRepository:
         return {str(row["state"]): int(row["n"]) for row in rows}
 
     def next_number(self, site: SiteCode | str, prefix: str = "WO") -> str:
-        count = self.book.scalar(
-            "SELECT COUNT(*) FROM work_order WHERE site_code = ?", (as_site(site).value,)
-        )
+        """The next free number for a prefix, counted across the whole book.
+
+        The number is the primary key and it is not scoped by site, so counting
+        a site's own orders hands the second plant on a book a number the first
+        one already has. That is not a clash the schema catches: the upsert
+        quietly moves the existing order onto the other site's trap.
+        """
+
+        as_site(site)
+        pattern = f"{prefix.strip().upper()}-%"
+        count = self.book.scalar("SELECT COUNT(*) FROM work_order WHERE number LIKE ?", (pattern,))
         return f"{prefix.strip().upper()}-{int(count or 0) + 1:05d}"

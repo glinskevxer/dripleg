@@ -117,11 +117,14 @@ def import_survey(
     *,
     name: str = "Season",
     contractor: str = "Vane Energy",
+    site: str | None = None,
 ) -> Result:
     """Open a survey and import a set of readings into it."""
 
+    where = ["--site", site] if site is not None else []
     run(
         book,
+        *where,
         "survey",
         "open",
         reference,
@@ -132,4 +135,4 @@ def import_survey(
         started,
     )
     path = survey_file(tmp_path, f"{reference}.csv", rows)
-    return run(book, "survey", "import", reference, str(path))
+    return run(book, *where, "survey", "import", reference, str(path))

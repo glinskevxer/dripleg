@@ -225,12 +225,17 @@ def test_every_order_on_one_trap(book: Database) -> None:
     assert repo.for_tag("WRX1", "B12-MP-99") == []
 
 
-def test_the_next_number_counts_what_is_there(book: Database) -> None:
+def test_the_next_number_counts_across_the_whole_book(book: Database) -> None:
     repo = WorkOrderRepository(book)
     assert repo.next_number("WRX1") == "WO-00001"
     repo.save("WRX1", WorkOrder.raise_for("WO-00001", a_job(), on=DAY, within_days=30))
     assert repo.next_number("WRX1") == "WO-00002"
-    assert repo.next_number("WRX1", "job") == "JOB-00002"
+
+
+def test_the_next_number_counts_per_prefix(book: Database) -> None:
+    repo = WorkOrderRepository(book)
+    repo.save("WRX1", WorkOrder.raise_for("WO-00001", a_job(), on=DAY, within_days=30))
+    assert repo.next_number("WRX1", "job") == "JOB-00001"
 
 
 def test_saving_an_order_twice_updates_it(book: Database) -> None:
