@@ -37,6 +37,7 @@ class Database:
         )
         self._connection.row_factory = sqlite3.Row
         self._depth = 0
+        self._statements = 0
         self._apply_settings()
 
     def _apply_settings(self) -> None:
@@ -52,6 +53,19 @@ class Database:
             cursor.execute("PRAGMA busy_timeout = 5000")
         finally:
             cursor.close()
+
+    @property
+    def statements(self) -> int:
+        """How many statements this connection has run.
+
+        Kept because the only way to catch a query per row creeping back into a
+        bulk path is to count, and the only way to count reliably is here.
+        """
+
+        return self._statements
+
+    def reset_statement_count(self) -> None:
+        self._statements = 0
 
     @property
     def is_memory(self) -> bool:
@@ -73,6 +87,7 @@ class Database:
     # Reading --------------------------------------------------------------
 
     def query(self, sql: str, parameters: Sequence[Any] = ()) -> list[sqlite3.Row]:
+        self._statements += 1
         cursor = self._connection.execute(sql, parameters)
         try:
             return cursor.fetchall()
@@ -80,6 +95,7 @@ class Database:
             cursor.close()
 
     def one(self, sql: str, parameters: Sequence[Any] = ()) -> sqlite3.Row | None:
+        self._statements += 1
         cursor = self._connection.execute(sql, parameters)
         try:
             row: sqlite3.Row | None = cursor.fetchone()
@@ -96,6 +112,7 @@ class Database:
     def execute(self, sql: str, parameters: Sequence[Any] = ()) -> int:
         """Run one statement. Returns the row id where sqlite gives one."""
 
+        self._statements += 1
         cursor = self._connection.execute(sql, parameters)
         try:
             return int(cursor.lastrowid or 0)
@@ -103,6 +120,9 @@ class Database:
             cursor.close()
 
     def execute_many(self, sql: str, rows: Sequence[Sequence[Any]]) -> None:
+        """One statement, however many rows go through it."""
+
+        self._statements += 1
         cursor = self._connection.executemany(sql, rows)
         cursor.close()
 

@@ -35,6 +35,29 @@ _COLUMNS = (
 )
 
 
+_UPSERT = (
+    f"INSERT INTO trap_station ({_COLUMNS}) "
+    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
+    "ON CONFLICT(site_code, tag) DO UPDATE SET "
+    "area_code = excluded.area_code, system_code = excluded.system_code, "
+    "sequence = excluded.sequence, "
+    "model_manufacturer = excluded.model_manufacturer, "
+    "model_code = excluded.model_code, service = excluded.service, "
+    "accessibility = excluded.accessibility, criticality = excluded.criticality, "
+    "profile_code = excluded.profile_code, installed_on = excluded.installed_on, "
+    "removed_on = excluded.removed_on, destination = excluded.destination, "
+    "strainer_fitted = excluded.strainer_fitted, "
+    "isolation_valves = excluded.isolation_valves, "
+    "test_valve_fitted = excluded.test_valve_fitted, "
+    "insulated = excluded.insulated, "
+    "interval_months_override = excluded.interval_months_override, "
+    "pipe_nominal = excluded.pipe_nominal, "
+    "run_length_ft = excluded.run_length_ft, "
+    "warmup_minutes = excluded.warmup_minutes, "
+    "note = excluded.note"
+)
+
+
 class StationRepository:
     """Trap stations, one site at a time."""
 
@@ -46,52 +69,35 @@ class StationRepository:
 
     def save(self, station: TrapInstallation) -> None:
         with self.book.transaction():
-            self.book.execute(
-                f"INSERT INTO trap_station ({_COLUMNS}) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
-                "ON CONFLICT(site_code, tag) DO UPDATE SET "
-                "area_code = excluded.area_code, system_code = excluded.system_code, "
-                "sequence = excluded.sequence, "
-                "model_manufacturer = excluded.model_manufacturer, "
-                "model_code = excluded.model_code, service = excluded.service, "
-                "accessibility = excluded.accessibility, criticality = excluded.criticality, "
-                "profile_code = excluded.profile_code, installed_on = excluded.installed_on, "
-                "removed_on = excluded.removed_on, destination = excluded.destination, "
-                "strainer_fitted = excluded.strainer_fitted, "
-                "isolation_valves = excluded.isolation_valves, "
-                "test_valve_fitted = excluded.test_valve_fitted, "
-                "insulated = excluded.insulated, "
-                "interval_months_override = excluded.interval_months_override, "
-                "pipe_nominal = excluded.pipe_nominal, "
-                "run_length_ft = excluded.run_length_ft, "
-                "warmup_minutes = excluded.warmup_minutes, "
-                "note = excluded.note",
-                (
-                    station.site.value,
-                    str(station.tag),
-                    station.tag.area.value,
-                    station.tag.system.value,
-                    station.tag.sequence,
-                    station.model.manufacturer,
-                    station.model.code,
-                    station.service.value,
-                    station.accessibility.value,
-                    station.criticality.value,
-                    station.profile.code,
-                    station.installed_on.isoformat(),
-                    None if station.removed_on is None else station.removed_on.isoformat(),
-                    None if station.destination is None else station.destination.value,
-                    1 if station.strainer_fitted else 0,
-                    station.isolation_valves,
-                    1 if station.test_valve_fitted else 0,
-                    1 if station.insulated else 0,
-                    station.interval_months_override,
-                    station.pipe_nominal,
-                    station.run_length_ft,
-                    station.warmup_minutes,
-                    station.note,
-                ),
-            )
+            self.book.execute(_UPSERT, self._values(station))
+
+    @staticmethod
+    def _values(station: TrapInstallation) -> tuple[object, ...]:
+        return (
+            station.site.value,
+            str(station.tag),
+            station.tag.area.value,
+            station.tag.system.value,
+            station.tag.sequence,
+            station.model.manufacturer,
+            station.model.code,
+            station.service.value,
+            station.accessibility.value,
+            station.criticality.value,
+            station.profile.code,
+            station.installed_on.isoformat(),
+            None if station.removed_on is None else station.removed_on.isoformat(),
+            None if station.destination is None else station.destination.value,
+            1 if station.strainer_fitted else 0,
+            station.isolation_valves,
+            1 if station.test_valve_fitted else 0,
+            1 if station.insulated else 0,
+            station.interval_months_override,
+            station.pipe_nominal,
+            station.run_length_ft,
+            station.warmup_minutes,
+            station.note,
+        )
 
     def get(self, site: SiteCode | str, tag: TrapTag | str) -> TrapInstallation:
         site_code = as_site(site)
@@ -157,12 +163,22 @@ class StationRepository:
         return register
 
     def save_register(self, register: TrapRegister) -> int:
-        written = 0
+        return self.save_many(list(register))
+
+    def save_many(self, stations: list[TrapInstallation]) -> int:
+        """Write a batch of stations through one statement.
+
+        A register import on a plant with four thousand traps was four thousand
+        round trips, one per station, and the whole of that time was the round
+        trip rather than the write. `executemany` on the same upsert takes it to
+        one, and the transaction was already there.
+        """
+
+        if not stations:
+            return 0
         with self.book.transaction():
-            for station in register:
-                self.save(station)
-                written += 1
-        return written
+            self.book.execute_many(_UPSERT, [self._values(station) for station in stations])
+        return len(stations)
 
     def count(self, site: SiteCode | str) -> int:
         site_code = as_site(site)
