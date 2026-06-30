@@ -12,7 +12,7 @@ from dripleg.cli.loading import diagnosis_for, register_for
 from dripleg.cli.output import emit_facts, emit_lines, emit_rows
 from dripleg.errors import ConflictError
 from dripleg.ingest.profile import profile_named
-from dripleg.ingest.reader import read_survey_csv
+from dripleg.ingest.reader import read_survey_csv, write_quarantine
 from dripleg.programme.calibration import calibrate
 from dripleg.report.survey_report import build_survey_report
 from dripleg.report.table import Column
@@ -64,6 +64,12 @@ def survey_open(context: Context, reference: str, name: str, contractor: str, st
 @click.argument("path", type=click.Path(exists=True, dir_okay=False, path_type=Path))
 @click.option("--profile", "profile_name", default=None, help="Force a mapping profile.")
 @click.option("--dry-run", is_flag=True, help="Read the file and report, write nothing.")
+@click.option(
+    "--quarantine",
+    type=click.Path(dir_okay=False, path_type=Path),
+    default=None,
+    help="Write the rows that would not read to this file.",
+)
 @click.pass_obj
 def survey_import(
     context: Context,
@@ -71,6 +77,7 @@ def survey_import(
     path: Path,
     profile_name: str | None,
     dry_run: bool,
+    quarantine: Path | None,
 ) -> None:
     """Read a tablet export into an open survey."""
 
@@ -87,6 +94,8 @@ def survey_import(
         written += 1
     if not dry_run:
         repo.save(survey)
+    if quarantine is not None and result.quarantined:
+        write_quarantine(result.quarantined, quarantine)
     emit_facts(
         context,
         {
@@ -97,6 +106,7 @@ def survey_import(
             "quarantined": result.rejected,
             "written": 0 if dry_run else written,
             "dry_run": dry_run,
+            "quarantine_file": "" if quarantine is None else str(quarantine),
             "quarantine": [str(row) for row in result.quarantined],
         },
     )

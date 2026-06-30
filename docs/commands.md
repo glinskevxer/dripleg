@@ -412,6 +412,7 @@ Read a tablet export into an open survey.
 | `path` | positional |  |
 | `--profile` | Force a mapping profile. |  |
 | `--dry-run` | Read the file and report, write nothing. |  |
+| `--quarantine` | Write the rows that would not read to this file. |  |
 
 ## `dripleg survey list`
 
@@ -490,6 +491,7 @@ Read an asset register export into the book.
 | --- | --- | --- |
 | `path` | positional |  |
 | `--dry-run` | Read the file and report, write nothing. |  |
+| `--quarantine` | Write the rows that would not read to this file. |  |
 
 ## `dripleg trap list`
 

@@ -12,6 +12,7 @@ import click
 from dripleg.cli.context import Context
 from dripleg.cli.loading import register_for
 from dripleg.cli.output import emit_facts, emit_rows
+from dripleg.ingest.reader import write_quarantine
 from dripleg.ingest.register_reader import read_register_csv
 from dripleg.model.attributes import Accessibility, Criticality, ServiceType
 from dripleg.model.header import DischargeDestination
@@ -370,8 +371,14 @@ def trap_sizing(context: Context, wrong_only: bool, cold_f: float) -> None:
 @trap_group.command("import")
 @click.argument("path", type=click.Path(exists=True, dir_okay=False, path_type=Path))
 @click.option("--dry-run", is_flag=True, help="Read the file and report, write nothing.")
+@click.option(
+    "--quarantine",
+    type=click.Path(dir_okay=False, path_type=Path),
+    default=None,
+    help="Write the rows that would not read to this file.",
+)
 @click.pass_obj
-def trap_import(context: Context, path: Path, dry_run: bool) -> None:
+def trap_import(context: Context, path: Path, dry_run: bool, quarantine: Path | None) -> None:
     """Read an asset register export into the book."""
 
     plant = PlantRepository(context.book)
@@ -384,9 +391,9 @@ def trap_import(context: Context, path: Path, dry_run: bool) -> None:
     )
     repo = StationRepository(context.book)
     if not dry_run:
-        with context.book.transaction():
-            for station in result.stations:
-                repo.save(station)
+        repo.save_many(result.stations)
+    if quarantine is not None and result.quarantined:
+        write_quarantine(result.quarantined, quarantine)
     emit_facts(
         context,
         {
@@ -396,6 +403,7 @@ def trap_import(context: Context, path: Path, dry_run: bool) -> None:
             "quarantined": result.rejected,
             "written": 0 if dry_run else result.read,
             "dry_run": dry_run,
+            "quarantine_file": "" if quarantine is None else str(quarantine),
             "quarantine": [str(row) for row in result.quarantined],
         },
     )

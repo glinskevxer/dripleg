@@ -17,6 +17,7 @@ import datetime as dt
 import hashlib
 import io
 from dataclasses import dataclass, field
+from pathlib import Path
 
 from dripleg.errors import DriplegError, ValidationError
 from dripleg.ingest.profile import MappingProfile, profile_for_header
@@ -32,7 +33,13 @@ from dripleg.survey.readings import (
 from dripleg.units.pressure import Pressure
 from dripleg.units.temperature import Temperature
 
-__all__ = ["ImportResult", "QuarantinedRow", "read_survey_csv", "sniff_dialect"]
+__all__ = [
+    "ImportResult",
+    "QuarantinedRow",
+    "read_survey_csv",
+    "sniff_dialect",
+    "write_quarantine",
+]
 
 # The three tablets export one of these and nothing else. Sniffing the whole
 # space of delimiters finds tabs inside a note field and cuts a file in half.
@@ -57,6 +64,28 @@ class QuarantinedRow:
 
     def __str__(self) -> str:
         return f"line {self.line}: {self.reason}"
+
+
+def write_quarantine(rows: list[QuarantinedRow], path: Path) -> int:
+    """Write the rows that would not read back out as csv, with the reason on each.
+
+    The office fixes them in the file and re-imports, which is the only workflow
+    that actually happens. A quarantine printed to a terminal and nowhere else
+    gets retyped, and retyping is where the second error comes from.
+    """
+
+    columns: list[str] = []
+    for row in rows:
+        for name in row.values:
+            if name not in columns:
+                columns.append(name)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.writer(handle, lineterminator="\n")
+        writer.writerow(["line", "reason", *columns])
+        for row in rows:
+            writer.writerow([row.line, row.reason, *[row.values.get(name, "") for name in columns]])
+    return len(rows)
 
 
 @dataclass(frozen=True)
