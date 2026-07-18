@@ -2,7 +2,7 @@
 
 # Commands
 
-74 commands.
+75 commands.
 
 ## `dripleg about`
 
@@ -337,6 +337,15 @@ Add or drop one stop, keeping the rest of the walk in order.
 | `tag` | positional |  |
 | `--after` | Insert it after this tag. |  |
 | `--drop` | Take the stop off instead. |  |
+
+## `dripleg rules coverage`
+
+What each rule did across one survey's readings.
+
+| option | help | default |
+| --- | --- | --- |
+| `reference` | positional |  |
+| `--dead-only` | Only the rules that never fired. |  |
 
 ## `dripleg rules list`
 

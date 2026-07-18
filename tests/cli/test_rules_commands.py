@@ -158,3 +158,40 @@ def test_an_exclusion_naming_a_gone_rule_shows_as_stale(book: str) -> None:
     connection.close()
     payload = json.loads(run(book, "--site", "WRX1", "--json", "rules", "stale").output)
     assert payload[0]["rule"] == "GONE-1"
+
+
+def test_the_coverage_lists_every_rule(book: str) -> None:
+    payload = json.loads(run(book, "--json", "rules", "coverage", "S2025-1").output)
+    assert len(payload) >= 18
+    assert all(row["rule"] for row in payload)
+
+
+def test_a_rule_that_fired_reads_as_working(book: str) -> None:
+    payload = json.loads(run(book, "--json", "rules", "coverage", "S2025-1").output)
+    fired = {row["rule"]: row for row in payload if int(row["fired"]) > 0}
+    assert "SND-1" in fired
+    assert fired["SND-1"]["verdict"] in {"working", "fires on everything"}
+
+
+def test_a_rule_whose_reading_is_never_taken_says_so(book: str) -> None:
+    payload = json.loads(run(book, "--json", "rules", "coverage", "S2025-1").output)
+    glass = next(row for row in payload if row["rule"] == "VIS-1")
+    assert glass["verdict"] == "never applied"
+    assert int(glass["skipped"]) == 1
+
+
+def test_the_dead_only_flag_cuts_the_working_ones(book: str) -> None:
+    everything = json.loads(run(book, "--json", "rules", "coverage", "S2025-1").output)
+    dead = json.loads(run(book, "--json", "rules", "coverage", "S2025-1", "--dead-only").output)
+    assert len(dead) < len(everything)
+    assert all(int(row["fired"]) == 0 for row in dead)
+
+
+def test_a_switched_off_rule_is_not_in_the_coverage(book: str) -> None:
+    run(book, "rules", "off", "TMP-1", "--reason", "not here")
+    payload = json.loads(run(book, "--json", "rules", "coverage", "S2025-1").output)
+    assert all(row["rule"] != "TMP-1" for row in payload)
+
+
+def test_coverage_for_a_survey_that_is_not_there(book: str) -> None:
+    assert run(book, "rules", "coverage", "S2099-9").exit_code != 0
