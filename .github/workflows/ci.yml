@@ -28,6 +28,7 @@ jobs:
       - run: python -m dripleg.tools.check_workflow
       - run: python -m dripleg.tools.query_plan
       - run: python -m dripleg.tools.check_exports
+      - run: python -m dripleg.tools.release_check
       - run: python -m dripleg.tools.schema_dump --check
       - run: python -m dripleg.tools.build_docs --check
 
