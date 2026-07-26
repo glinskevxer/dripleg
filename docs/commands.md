@@ -8,6 +8,10 @@
 
 Say what this build is and what the book holds.
 
+| option | help | default |
+| --- | --- | --- |
+| `--full` | Count everything, not just the headline. |  |
+
 ## `dripleg area add`
 
 Add an area to a site.

@@ -91,3 +91,82 @@ def test_the_site_option_is_read_back(runner: CliRunner, tmp_path: Path) -> None
     runner.invoke(cli, ["--book", str(target), "init"])
     result = runner.invoke(cli, ["--book", str(target), "--site", "WRX1", "about"])
     assert result.exit_code == 0
+
+
+def test_about_says_whether_the_book_is_up_to_date(runner: CliRunner, tmp_path: Path) -> None:
+    target = tmp_path / "wrx1.sqlite3"
+    runner.invoke(cli, ["--book", str(target), "init"])
+    payload = json.loads(runner.invoke(cli, ["--book", str(target), "--json", "about"]).output)
+    assert payload["up_to_date"] is True
+
+
+def test_the_headline_about_is_short(runner: CliRunner, tmp_path: Path) -> None:
+    target = tmp_path / "wrx1.sqlite3"
+    runner.invoke(cli, ["--book", str(target), "init"])
+    payload = json.loads(runner.invoke(cli, ["--book", str(target), "--json", "about"]).output)
+    assert "surveys" not in payload
+    assert "routes" not in payload
+
+
+def test_the_full_about_counts_everything(runner: CliRunner, tmp_path: Path) -> None:
+    target = tmp_path / "wrx1.sqlite3"
+    runner.invoke(cli, ["--book", str(target), "init"])
+    payload = json.loads(
+        runner.invoke(cli, ["--book", str(target), "--json", "about", "--full"]).output
+    )
+    for key in (
+        "areas",
+        "headers",
+        "routes",
+        "surveys",
+        "readings",
+        "costed_findings",
+        "work_orders",
+        "open_work_orders",
+        "accepted_risks",
+        "rules_switched_off",
+        "fittings_recorded",
+        "site_codes",
+    ):
+        assert key in payload
+    assert payload["site_codes"] == ""
+
+
+def test_the_full_about_follows_the_book(runner: CliRunner, tmp_path: Path) -> None:
+    from tests.support.cli import add_traps, import_survey, make_book, run
+
+    book = make_book(tmp_path, name="full.sqlite3")
+    add_traps(book, ["B12-MP-1"])
+    import_survey(
+        book,
+        tmp_path,
+        "S2025-1",
+        "2025-04-07",
+        ["B12-MP-1,2025-04-08,R Ellis,pass,70,30,0,345,258,74,,,"],
+    )
+    run(book, "loss", "report", "S2025-1", "--save")
+    payload = json.loads(run(book, "--json", "about", "--full").output)
+    assert payload["site_codes"] == "WRX1"
+    assert payload["surveys"] == 1
+    assert payload["readings"] == 1
+    assert payload["costed_findings"] == 1
+    assert payload["fittings_recorded"] == 1
+
+
+def test_the_open_orders_are_counted_apart(runner: CliRunner, tmp_path: Path) -> None:
+    from tests.support.cli import add_traps, import_survey, make_book, run
+
+    book = make_book(tmp_path, name="orders.sqlite3")
+    add_traps(book, ["B12-MP-1"])
+    import_survey(
+        book,
+        tmp_path,
+        "S2025-1",
+        "2025-04-07",
+        ["B12-MP-1,2025-04-08,R Ellis,pass,70,30,0,345,258,74,,,"],
+    )
+    run(book, "loss", "report", "S2025-1", "--save")
+    run(book, "work", "raise", "S2025-1", "--on", "2025-04-14")
+    payload = json.loads(run(book, "--json", "about", "--full").output)
+    assert payload["work_orders"] == 1
+    assert payload["open_work_orders"] == 1

@@ -66,20 +66,46 @@ def init(context: Context) -> None:
         click.echo(f"applied {line}")
 
 
+def _count(context: Context, table: str, where: str = "", *parameters: object) -> int:
+    clause = f" WHERE {where}" if where else ""
+    return int(context.book.scalar(f"SELECT COUNT(*) FROM {table}{clause}", parameters) or 0)
+
+
 @cli.command()
+@click.option("--full", is_flag=True, help="Count everything, not just the headline.")
 @click.pass_obj
-def about(context: Context) -> None:
+def about(context: Context, full: bool) -> None:
     """Say what this build is and what the book holds."""
 
-    facts = {
+    facts: dict[str, object] = {
         "version": __version__,
         "book": context.book_path,
         "schema_version": context.version_of_book,
         "latest_migration": MIGRATIONS[-1].number,
-        "sites": int(context.book.scalar("SELECT COUNT(*) FROM site") or 0),
-        "trap_models": int(context.book.scalar("SELECT COUNT(*) FROM trap_model") or 0),
-        "trap_stations": int(context.book.scalar("SELECT COUNT(*) FROM trap_station") or 0),
+        "up_to_date": context.version_of_book == MIGRATIONS[-1].number,
+        "sites": _count(context, "site"),
+        "trap_models": _count(context, "trap_model"),
+        "trap_stations": _count(context, "trap_station"),
     }
+    if full:
+        facts.update(
+            {
+                "areas": _count(context, "area"),
+                "headers": _count(context, "header"),
+                "routes": _count(context, "route"),
+                "surveys": _count(context, "survey"),
+                "readings": _count(context, "observation"),
+                "costed_findings": _count(context, "finding"),
+                "work_orders": _count(context, "work_order"),
+                "open_work_orders": _count(
+                    context, "work_order", "state NOT IN ('verified', 'cancelled')"
+                ),
+                "accepted_risks": _count(context, "accepted_risk"),
+                "rules_switched_off": _count(context, "rule_exclusion"),
+                "fittings_recorded": _count(context, "trap_fitting"),
+                "site_codes": ", ".join(context.site_codes()),
+            }
+        )
     if context.as_json:
         click.echo(json.dumps(facts, indent=2))
         return
