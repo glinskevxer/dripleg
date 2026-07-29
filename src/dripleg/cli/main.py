@@ -28,7 +28,25 @@ from dripleg.store.migrations import MIGRATIONS
 __all__ = ["cli", "run"]
 
 
-@click.group(context_settings={"help_option_names": ["-h", "--help"]})
+class DriplegGroup(click.Group):
+    """The top level group, with our own errors turned into clean messages.
+
+    Without this a `NotFoundError` reaches click as an unhandled exception and
+    the user gets a traceback for the ordinary case of naming a survey that is
+    not there. Click's own `UsageError` machinery is the right shape for it, so
+    our errors are translated into that rather than printed by hand: the exit
+    code, the stream and the formatting then all match what click does for
+    everything else.
+    """
+
+    def invoke(self, ctx: click.Context) -> object:
+        try:
+            return super().invoke(ctx)
+        except DriplegError as problem:
+            raise click.ClickException(str(problem)) from problem
+
+
+@click.group(cls=DriplegGroup, context_settings={"help_option_names": ["-h", "--help"]})
 @click.option(
     "--book",
     "book_path",
@@ -134,7 +152,11 @@ cli.add_command(work_group)
 
 
 def run() -> int:
-    """The console entry point, which turns our errors into exit codes."""
+    """The console entry point, which turns our errors into exit codes.
+
+    `SystemExit` comes through here too, because a command that decides its own
+    exit code raises one and click would otherwise let it past unread.
+    """
 
     try:
         cli.main(standalone_mode=False)
@@ -144,6 +166,8 @@ def run() -> int:
     except click.Abort:
         click.echo("aborted", err=True)
         return 130
+    except SystemExit as stopping:
+        return int(stopping.code or 0)
     except DriplegError as problem:
         click.echo(f"error: {problem}", err=True)
         return 2

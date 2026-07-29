@@ -76,7 +76,7 @@ def test_about_in_json(runner: CliRunner, tmp_path: Path) -> None:
 def test_about_on_a_book_that_is_not_there(runner: CliRunner, tmp_path: Path) -> None:
     result = runner.invoke(cli, ["--book", str(tmp_path / "missing.sqlite3"), "about"])
     assert result.exit_code != 0
-    assert "run 'dripleg init'" in str(result.exception)
+    assert "run 'dripleg init'" in result.output
 
 
 def test_the_book_can_come_from_the_environment(runner: CliRunner, tmp_path: Path) -> None:

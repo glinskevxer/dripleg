@@ -45,7 +45,7 @@ def test_an_area_needs_a_site_once_there_are_two(book: str) -> None:
     run(book, "site", "add", "WRX2", "Second mill", "--operator", "Bryn")
     without = run(book, "area", "add", "B12", "Machine", "--cost-centre", "PM2")
     assert without.exit_code != 0
-    assert "--site" in str(without.exception)
+    assert "--site" in without.output
 
 
 def test_an_area_needs_no_site_when_there_is_only_one(book: str) -> None:

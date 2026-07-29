@@ -29,7 +29,7 @@ def test_a_second_site_makes_the_option_required(book: str) -> None:
     run(book, "site", "add", "WRX2", "Second mill", "--operator", "Bryn")
     result = run(book, "area", "list")
     assert result.exit_code != 0
-    assert "this book holds WRX1, WRX2" in str(result.exception)
+    assert "this book holds WRX1, WRX2" in result.output
 
 
 def test_the_option_still_works_with_two_sites(book: str) -> None:
@@ -44,7 +44,7 @@ def test_a_book_with_no_sites_says_to_add_one(tmp_path: Path) -> None:
     run(target, "init")
     result = run(target, "area", "list")
     assert result.exit_code != 0
-    assert "no sites on it yet" in str(result.exception)
+    assert "no sites on it yet" in result.output
 
 
 def test_the_environment_variable_still_wins(book: str) -> None:

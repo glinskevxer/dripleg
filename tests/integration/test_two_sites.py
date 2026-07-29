@@ -206,7 +206,7 @@ def test_the_fleet_view_adds_both_sites_up(book: str, tmp_path: Path) -> None:
 def test_a_command_with_two_sites_on_the_book_needs_the_option(book: str) -> None:
     result = run(book, "trap", "list")
     assert result.exit_code != 0
-    assert "--site" in str(result.exception)
+    assert "--site" in result.output
 
 
 def test_the_doctor_looks_at_one_site_at_a_time(book: str) -> None:
