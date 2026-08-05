@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "dripleg"
-version = "0.2.0"
+version = "1.0.0"
 description = "Steam trap survey register and steam loss accounting"
 requires-python = ">=3.12"
 dependencies = ["click==8.1.8"]
