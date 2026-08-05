@@ -82,3 +82,50 @@ def test_a_workflow_that_is_not_there_is_a_different_failure(
 def test_the_check_is_stable() -> None:
     text = DEFAULT_WORKFLOW.read_text(encoding="utf-8")
     assert check(text) == check(text)
+
+
+def test_the_workflow_runs_the_release_check() -> None:
+    text = DEFAULT_WORKFLOW.read_text(encoding="utf-8")
+    assert "dripleg.tools.release_check" in text
+
+
+def test_the_workflow_installs_the_wheel_and_walks_it() -> None:
+    text = DEFAULT_WORKFLOW.read_text(encoding="utf-8")
+    assert "installed-walk:" in text
+    assert 'dripleg --book "$book" survey import' in text
+    assert 'dripleg --book "$book" loss report' in text
+
+
+def test_every_command_the_walk_runs_is_a_real_command() -> None:
+    import re
+
+    from dripleg.cli.main import cli
+
+    text = DEFAULT_WORKFLOW.read_text(encoding="utf-8")
+    used = set(re.findall(r'dripleg --book "\$book" ([a-z-]+)(?: ([a-z-]+))?', text))
+    for group, command in used:
+        assert group in cli.commands, group
+        found = cli.commands[group]
+        if command and hasattr(found, "commands"):
+            assert command in found.commands, f"{group} {command}"
+
+
+def test_the_package_job_uploads_what_it_built() -> None:
+    text = DEFAULT_WORKFLOW.read_text(encoding="utf-8")
+    assert "upload-artifact@v4" in text
+    assert "name: dist" in text
+
+
+def test_the_walk_uses_the_console_script_not_the_module() -> None:
+    """The installed entry point is the thing under test, so it has to be used."""
+
+    text = DEFAULT_WORKFLOW.read_text(encoding="utf-8")
+    walk = text.split("installed-walk:", 1)[1]
+    assert "python -m dripleg.cli" not in walk
+    assert "dripleg --book" in walk
+
+
+def test_the_walk_runs_under_a_strict_shell() -> None:
+    text = DEFAULT_WORKFLOW.read_text(encoding="utf-8")
+    walk = text.split("installed-walk:", 1)[1]
+    assert "set -euo pipefail" in walk
